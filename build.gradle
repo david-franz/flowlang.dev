@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'antlr'
+}
+
+group = 'dfpp'
+version = '0.1.0'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(22) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    antlr 'org.antlr:antlr4:4.13.1'
+    implementation 'org.ow2.asm:asm:9.7.1'
+    implementation 'org.ow2.asm:asm-util:9.7.1'
+    implementation 'org.antlr:antlr4-runtime:4.13.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+}
+
+/** Configure the ANTLR codegen task */
+tasks.withType(org.gradle.api.plugins.antlr.AntlrTask).configureEach {
+    arguments += ['-visitor', '-long-messages']
+    // (optional) choose the output dir
+    outputDirectory = file("$buildDir/generated-src/antlr/main")
+}
+
+/** Make sure the generated sources are compiled */
+sourceSets.main.java.srcDirs += ["$buildDir/generated-src/antlr/main"]
+
+test { useJUnitPlatform() }

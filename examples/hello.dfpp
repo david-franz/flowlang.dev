@@ -1,0 +1,8 @@
+module demo.hello
+
+const answer = 40 + 2
+
+fn main() {
+  print("answer = " + answer)
+  print( (1 + 2 * 3 == 7) ? "ok" : "nope" )
+}
