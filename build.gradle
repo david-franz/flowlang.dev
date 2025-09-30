@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'antlr'
+    id 'application'
 }
 
 group = 'dfpp'
@@ -29,5 +30,9 @@ tasks.withType(org.gradle.api.plugins.antlr.AntlrTask).configureEach {
 
 /** Make sure the generated sources are compiled */
 sourceSets.main.java.srcDirs += ["$buildDir/generated-src/antlr/main"]
+application {
+    // dfpp compiler entry point
+    mainClassName = 'dfpp.Driver'
+}
 
 test { useJUnitPlatform() }

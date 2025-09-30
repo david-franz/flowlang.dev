@@ -2,7 +2,14 @@
 
 *A small, secure JVM language that blends OOP types, functional collections, and declarative tasks — with a mandatory sandbox runtime.*
 
-> **Status:** This repository is an **implementation proposal**. The language surface, compiler architecture, stdlib, and tooling are specified here with enough detail to implement v1. Tooling (CLI/LSP/test runner) is also proposed in this doc.
+> **Status:** This repository is the reference implementation of df++ (compiler, dfVM, standard library, and tooling).
+
+> **Build & Run the example**:
+
+```bash
+./gradlew clean build
+./gradlew run --args="examples/hello.dfpp demo.hello"
+```
 
 ---
 

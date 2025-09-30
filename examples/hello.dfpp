@@ -1,8 +1,8 @@
 module demo.hello
 
-const answer = 40 + 2
+// Simplest example: compute a constant
+const answer: Int = 40 + 2
 
 fn main() {
   print("answer = " + answer)
-  print( (1 + 2 * 3 == 7) ? "ok" : "nope" )
 }

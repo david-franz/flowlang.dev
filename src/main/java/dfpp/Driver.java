@@ -27,7 +27,6 @@ public final class Driver {
         var tokens = new CommonTokenStream(lexer);
         var parser = new DfppParser(tokens);
         parser.removeErrorListeners();
-        parser.addErrorListener(new DiagnosticErrorListener());
         parser.addErrorListener(new BaseErrorListener() {
             @Override public void syntaxError(Recognizer<?, ?> r, Object off, int line, int col, String msg, RecognitionException e) {
                 throw new RuntimeException("parse error at "+line+":"+col+" "+msg);
