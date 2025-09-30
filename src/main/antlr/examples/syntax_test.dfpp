@@ -1,0 +1,73 @@
+module demo.sample
+
+import std.core as Core
+import std.io as IO
+import std.net.http as Http
+
+// ---------- Generic type declarations ----------
+type Option<T> = None | Some(T)
+type Result<T,E> = Ok(T) | Err(E)
+// Variant carrying a single record parameter
+type Msg = Hello(String) | Data({ id: Int, value: Int })
+
+// ---------- Const / let / mut / literals ----------
+const greeting: String = "hi"
+let `foo bar` = 42
+mut counter: Int = 0
+let pi = 3.14
+let none = null
+let flag = true && !false
+
+// ---------- Records, arrays, indexing, member access ----------
+let rec = { id = 1, title = "ok" }
+let arr = [10, 20, 30]
+let second = arr[1]
+let gotTitle = rec.title
+
+// ---------- Postfix chaining and lambdas ----------
+let userNames =
+  Http.Client.listUsers("https://api.example")
+    .map(u -> u.name)
+    .filter(n -> n != "")
+
+// Function value with an explicit function type
+let inc: Int -> Int = x -> x + 1
+
+// ---------- Functions (expr body and block body) ----------
+fn add(a: Int, b: Int): Int = a + b
+
+fn mathDemo(): Int {
+  let x = 5 - 3 * 2
+  let m = 5 % 2
+  x + m
+}
+
+fn pick(b: Bool, x: Int, y: Int): Int = b ? x : y
+
+fn describe(m: Msg): String =
+  match (m) {
+    Hello(s) -> "hello " + s,
+    // Bind the record payload, then access fields (no nested pattern args in v1)
+    Data(r)  -> "id=" + r.id.str()
+  }
+
+fn demoOption(o: Option<String>): String =
+  match (o) { Some(s) -> s, None -> "none" }
+
+fn classify(n: Int): String =
+  match (n) { 0 -> "zero", _ -> "nonzero" }
+
+// ---------- Task with pre/act/pos ----------
+task 'normalize data' {
+  pre  arr.size() > 0
+  act  {
+    let cleaned = userNames.map(n -> n.trim()).filter(n -> n != "")
+    let sizes = cleaned.map(n -> n.size())
+    sizes.forEach(k -> IO.print(k.str()))
+  }
+  pos  true
+}
+
+// ---------- Orchestration at top level ----------
+run('fetch').then('process').then('store')
+parallel { 'refresh cache', 'emit metrics' }
