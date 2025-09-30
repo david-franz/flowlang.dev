@@ -1,0 +1,556 @@
+# df++ (dfpp + dfVM)
+
+*A small, secure JVM language that blends OOP types, functional collections, and declarative tasks — with a mandatory sandbox runtime.*
+
+> **Status:** This repository is an **implementation proposal**. The language surface, compiler architecture, stdlib, and tooling are specified here with enough detail to implement v1. Tooling (CLI/LSP/test runner) is also proposed in this doc.
+
+---
+
+## Table of Contents
+
+* [Why df++? (Motivation)](#why-df-motivation)
+* [Design at a glance](#design-at-a-glance)
+* [Hello, df++ (quick examples)](#hello-df-quick-examples)
+
+    * [Tasks + Orchestration](#tasks--orchestration)
+    * [Pattern Matching (v1)](#pattern-matching-v1)
+    * [Collections (List/Set/Map)](#collections-listsetmap)
+    * [Contracts & Static Checks](#contracts--static-checks)
+    * [Java Interop (simplified import)](#java-interop-simplified-import)
+* [The Sandbox: dfVM (mandatory)](#the-sandbox-dfvm-mandatory)
+* [Standard Library (v1 interfaces)](#standard-library-v1-interfaces)
+* [Compiler Architecture (ANTLR → ASM)](#compiler-architecture-antlr--asm)
+* [Packaging: `dfpkg`](#packaging-dfpkg)
+* [Tooling (proposal)](#tooling-proposal)
+* [Flowtomic case study (how graphs map to df++)](#flowtomic-case-study-how-graphs-map-to-df)
+* [Roadmap](#roadmap)
+* [Repository layout (proposed)](#repository-layout-proposed)
+* [Build from source (proposal)](#build-from-source-proposal)
+* [Contributing](#contributing)
+* [License](#license)
+
+---
+
+## Why df++? (Motivation)
+
+**One language, three styles—without the bloat.**
+
+* **OOP, but simple:** values implement **multiple interfaces**; we **favor composition**; there is **no inheritance**.
+* **Functional by default:** iteration via pipelines over **List, Set, Map**; **pattern matching** is a first-class expression; purity is encouraged.
+* **Declarative tasks:** `task 'name' { pre; act { ... }; pos }` puts guard, effects, and postcondition together; orchestration reads like a plan: `run('A').then('B')` and `parallel { 'A', 'B' }`.
+
+**Secure and reproducible by construction.**
+
+* All programs run inside **dfVM**, a **mandatory** userspace sandbox: **capability-gated I/O**, **deterministic replay** (virtual time/RNG, HTTP fixtures), **resource quotas**, and a **syscall trace** for auditability.
+
+**Pragmatic to implement and deploy.**
+
+* The compiler is **ANTLR → ASM (JDK 21)**. Output is JVM bytecode.
+* Easy interop with Java libraries, but still capability-checked by dfVM.
+* **`dfpkg` bundles** replace many container use cases with faster startup and less operational overhead.
+
+---
+
+## Design at a glance
+
+* **Keywords (8):** `module, import, type, fn, task, const, let, mut`
+* **Identifiers:** normal (`snakeCase`) or **back-ticked** with spaces: `` `foo bar` ``
+* **Types:** records, ADTs (e.g. `Option`, `Result`), first-order generics (List/Set/Map)
+* **Pattern matching (v1):** `match (e) { Pattern -> expr; ... }`
+* **Tasks:** `task 'name' { pre P; act { ... }; pos Q }`
+* **Orchestration:** `run('A').then('B')`, `parallel { 'A', 'B', ... }`
+* **Contracts:** `pre/pos` are pure boolean formulas; optional invariants on pipelines (debug)
+* **Static checks:** a lightweight solver discharges simple contracts ahead of time; runtime checks always remain
+* **Type inference:** local; explicit top-level `fn` signatures recommended
+* **Interop:** direct typed import of JVM classes (proposal), capability-gated at runtime
+* **Runtime:** **dfVM** is required in all environments
+
+---
+
+## Hello, df++ (quick examples)
+
+> All code blocks start with a `::df++` marker to signal df++ source.
+
+### Tasks + Orchestration
+
+```text
+::df++
+
+module demo.tasks
+import std.io as IO
+
+mut counter: Int = 0
+
+task 'increment' {
+  act { counter = counter + 1 }
+  pos counter >= 1
+}
+
+task 'double' {
+  pre counter > 0
+  act { counter = counter * 2 }
+  pos counter % 2 == 0 && counter > 1
+}
+
+fn main(): Unit = {
+  run('increment').then('double')
+  IO.print("counter=" + counter.str())
+}
+```
+
+### Pattern Matching (v1)
+
+```text
+::df++
+
+module demo.match
+
+type Option<T> = None | Some(T)
+
+fn hello(opt: Option<String>): String =
+  match (opt) {
+    Some(s) -> "Hello, " + s
+    None    -> "Hello"
+  }
+```
+
+### Collections (List/Set/Map)
+
+```text
+::df++
+
+module demo.collections
+
+type User = { id: Int, name: String, tags: Set<String> }
+
+fn summarize(us: List<User>): Map<String, Int> = {
+  // group by first letter, score tag sets, sum per group
+  us.groupBy(u -> u.name.toLower().take(1))       // Map<String, List<User>>
+    .mapValues(lst -> lst
+      .map(u -> (u.tags.contains("pro") ? 10
+                 : (u.tags.contains("new") ? 1 : 0)))
+      .fold(0, (acc, s) -> acc + s))
+}
+```
+
+### Contracts & Static Checks
+
+```text
+::df++
+
+module demo.contracts
+
+fn safeHead<T>(xs: List<T>): T =
+  match (xs.size()) {
+    0 -> (assert(false); xs.head)      // will not happen if solver proves size>0
+    _ -> xs.take(1).head
+  }
+
+task 'use head' {
+  pre [1,2,3].nonEmpty()
+  act { let x = safeHead([1,2,3]); /* ... */ }
+  pos true
+}
+```
+
+> The static solver proves the `pre` ensures non-empty; runtime still checks (`assert`) for defense.
+
+### Java Interop (simplified import)
+
+```text
+::df++
+
+module demo.jvm
+import java: com.example.Http as Http    // proposal: direct JVM import
+import std.io as IO
+
+fn fetch(url: String): String = {
+  // dfVM must grant 'net' capability and allowlist this symbol
+  let bytes: Bytes = Http.get(url)       // signature mapped from JVM classfile
+  bytes.utf8()
+}
+```
+
+---
+
+## The Sandbox: dfVM (mandatory)
+
+**dfVM** enforces safety and reproducibility:
+
+* **Capabilities:** `env`, `fs` (virtual root, path policies), `net` (host/port ACL + HTTP fixtures), `time` (virtual clock), `rng` (seeded PRNG), `conc` (virtual threads).
+* **Determinism:** virtual time/RNG; HTTP fixtures record/replay by `(method, URL, headers, body)` key.
+* **Quotas:** CPU wallclock, heap soft cap, egress bytes, open FDs, concurrent tasks.
+* **Trace:** every effect creates a span (name, timing, sizes, contract verdicts).
+* **Deny by default:** reflection, `Unsafe`, raw sockets, `ProcessBuilder`, access outside the virtual FS root.
+* **Interop mediation:** even direct Java calls are **manifest-allowlisted** and capability-gated.
+
+---
+
+## Standard Library (v1 interfaces)
+
+*All I/O is implemented via dfVM services.*
+
+### `std.core`
+
+* **ADTs**
+
+    * `type Option<T> = None | Some(T)`
+    * `type Result<T,E> = Ok(T) | Err(E)`
+* **Futures**
+
+    * `trait Future<T> { map<U>((T)->U): Future<U>; then<U>((T)->Future<U>): Future<U>; await(): T }`
+* **List<T>**
+
+    * `map, flatMap, filter, fold, reduce, scan, zip, take, drop, groupBy, sortBy, forEach, size, isEmpty, nonEmpty`
+    * `static range(Int, Int): List<Int>`
+* **Set<T>**
+
+    * `union, intersect, diff, contains, size, isEmpty, map, filter, toList`
+* **Map<K,V>**
+
+    * `get(K): Option<V>, put(K,V): Map<K,V>, remove(K): Map<K,V>`
+    * `containsKey, keys(): Set<K>, values(): List<V>, entries(): List<(K,V)>`
+    * `mapValues<U>((V)->U): Map<K,U>, filterKeys((K)->Bool): Map<K,V>`
+* **Pattern matching helpers**
+
+    * `Option.match<U>(some:(T)->U, none:()->U): U`
+    * `Result.match<U>(ok:(T)->U, err:(E)->U): U`
+* **Base types**
+
+    * all expose `str(): String`
+
+### `std.json`
+
+* `type Json` (opaque)
+* `parse(String): Result<Json,String>`
+* `stringify(Json): String`
+* `encode<T>(T): Json` (derive for records/ADTs)
+* `decode<T>(Json): Result<T,String>`
+
+### `std.io`
+
+* `print(String): Unit`
+
+### `std.sys.*` (via dfVM)
+
+* **env:** `env(String): Option<String>`
+* **time:** `nowMs(): Long`, `sleep(Long): Unit`
+* **rng:** `randBytes(Int): Bytes`
+* **net:**
+
+    * `type HttpResp = { status: Int, headers: Map<String,String>, body: Bytes }`
+    * `httpGet(String, Map<String,String>): HttpResp`
+    * `httpPost(String, Map<String,String>, Bytes): HttpResp`
+* **conc:** `spawn(()->Unit): Future<Unit>`
+
+### `std.flow.orch` (orchestration helpers)
+
+* `type TaskChain = { then(String): TaskChain, await(): Result<Unit,String> }`
+* `run(String): TaskChain`
+* `parallel(List<String>): Result<Unit,String>`
+
+### `std.contracts`
+
+* `assert(Bool): Unit`
+* pipelines accept `.inv(Bool)` in debug builds
+
+---
+
+## Compiler Architecture (ANTLR → ASM)
+
+**Pipeline**
+
+1. **Parse (ANTLR4)** → AST (Java 21 records with source spans)
+2. **Typing** → nominal types, interfaces, first-order generics, local inference, non-null after guards, `match` exhaustiveness (finite ADTs exact, otherwise warn)
+3. **Lowering** → expression IR, closure conversion, pipeline fusion, tail-call → loops, `match` → decision DAG with binders
+4. **Static contract solver** → interval arithmetic + collection cardinalities + SAT on propositional core (see below)
+5. **Bytecode (ASM)** → single module class, static fields for globals, `fn`/`task` methods, `COMPUTE_FRAMES`, lines/locals
+
+**Bytecode shape (sketch)**
+
+* Module: `pkg/Module.class`
+* Functions: `public static Object f(Object[])`
+* Tasks: `t$pre():Z`, `t$act():Object`, `t$pos():Z`
+
+**Lowering example**
+
+Source:
+
+```text
+fn add(a: Int, b: Int): Int = a + b
+```
+
+Emitted (pseudo-ASM):
+
+```text
+mv = cw.visitMethod(ACC_PUBLIC|ACC_STATIC, "add$O",
+  "([Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+mv.visitCode();
+ // load a
+mv.visitVarInsn(ALOAD, 0); mv.visitInsn(ICONST_0); mv.visitInsn(AALOAD);
+mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
+mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+ // load b
+mv.visitVarInsn(ALOAD, 0); mv.visitInsn(ICONST_1); mv.visitInsn(AALOAD);
+mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
+mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+ // a + b
+mv.visitInsn(IADD);
+ // box and return
+mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
+mv.visitInsn(ARETURN);
+mv.visitMaxs(0,0); mv.visitEnd();
+```
+
+**Pattern matching lowering**
+
+```text
+match (opt) { Some(x) -> f(x); None -> g() }
+```
+
+* Generate a tag switch on the ADT variant; on `Some`, extract slot 0, bind `x`, call `f`.
+
+**Static contract solver (v1)**
+
+* **Input:** propositional formulas over:
+
+    * linear integer relations (`a <= b`, `a + c <= k`, etc.)
+    * collection cardinalities: `size(xs)`, `isEmpty`, `subset` (when statically derivable)
+    * (in)equality over literals and finite ADT tags
+* **Flow:** normalize → constant fold → **interval** analysis (Ints/Floats) → **cardinality** bounds (List/Set/Map) → residual CNF → **SAT** (DPLL) with simple learned clauses from conflicts.
+* **Verdicts:** `Proved` (can elide runtime check), `Refuted` (counterexample; optionally a compile error), `Unknown` (keep runtime check).
+* **Roadmap:** SMT backend for quantified finite checks; LTL monitor synthesis for temporal specs.
+
+---
+
+## Packaging: `dfpkg`
+
+A signed, capability-declaring bundle. Structure (zip):
+
+```
+myflow.dfpkg/
+  |- module.jar
+  |- dfpkg.json
+  |- fixtures/           # optional HTTP fixtures for replay
+  |- bundle.sig
+```
+
+Manifest example:
+
+```json
+{
+  "entry": "example.flow.Main.main",
+  "capabilities": {
+    "net": { "hosts": ["api.example.org:443"] },
+    "env": ["API_KEY"],
+    "time": { "deterministic": true },
+    "rng": { "seed": 42 },
+    "fs": { "root": "/work", "writable": ["/work/out"] }
+  },
+  "jvmAllowlist": [
+    "com.vendor.sdk.Client#get(Ljava/lang/String;)Ljava/lang/String;"
+  ],
+  "fixtures": "fixtures/",
+  "hashes": { "jar": "sha256:...", "fixtures": "sha256:..." },
+  "signature": "ed25519:..."
+}
+```
+
+The dfVM loader verifies signature, hashes, capabilities, and the Java allowlist before execution.
+
+---
+
+## Tooling (proposal)
+
+* **CLI**
+
+    * `dfpp build` → compiles to a signed `.dfpkg`
+    * `dfpp run` → runs a dfpkg under dfVM
+    * `dfpp test` → discovers and runs `test 'name' { ... }` blocks (tooling only)
+    * `dfpp trace` → streams syscall spans
+    * `dfpp replay` → deterministic re-run using fixtures
+
+* **LSP**
+
+    * Hover types (post-inference), go-to-def, rename
+    * Contract diagnostics (solver results), quick-fixes for missing capability declarations
+
+* **Debugger**
+
+    * Step through tasks; inspect contracts; view dfVM caps; tail spans
+
+* **Interop helpers**
+
+    * `dfpp jgen` → generate Java stubs for exported df++ fns and df++ externs for JVM classes
+
+> Tooling is part of this proposal; concrete commands may evolve during implementation.
+
+---
+
+## Flowtomic case study (how graphs map to df++)
+
+* **Nodes → tasks:** each node becomes `task 'node name' { pre; act { ... }; pos }`
+* **Edges → orchestration:**
+
+    * linear edges → `run('A').then('B')`
+    * fan-out → `parallel { 'A', 'B', 'C' }`
+* **Shared transforms → pure `fn`s**, and data reshaping via `List/Set/Map` pipelines
+* **External code (TS/Python) v1:** run as sidecar services; invoke via `std.sys.net.http*` (fixtures recorded for replay)
+* **Ops flow:** export → `dfpp build` → deploy `.dfpkg` → dfVM enforces caps/tracing → CI runs `dfpp replay` for bit-exact runs
+
+Why it fits:
+
+* Graph authoring aligns with **tasks + orchestration**
+* Data wrangling matches **functional collections**
+* Production needs (least-privilege, determinism, audit) → **dfVM** out of the box
+
+---
+
+## Roadmap
+
+* **v1**
+
+    * Language: pattern matching; records/ADTs; first-order generics; interfaces; tasks; contracts; local type inference
+    * Stdlib: core collections, json, io, sys(env/time/rng/net/conc), flow.orch, contracts
+    * Compiler: ANTLR → ASM; static solver (interval+cardinality+SAT); line/locals for debug
+    * Runtime: dfVM mandatory; fixtures; quotas; tracing
+    * Packaging: `dfpkg` + signature
+
+* **v1.1**
+
+    * Better `match` diagnostics; totality checks over user enums
+    * More collection ops; richer `Map`/`Set` builders
+    * Gradual typing experiments (opt-in)
+
+* **v2**
+
+    * SMT backend; finite quantifiers; simple temporal monitors
+    * GraalVM plugin or in-VM JS/Python sandboxes
+    * Package registry; dfpkg provenance/attestations
+
+---
+
+## Repository layout (proposed)
+
+```
+/compiler/
+  /grammar/         # ANTLR *.g4
+  /frontend/        # AST, typing, inference, match exhaustiveness
+  /lowering/        # IR, closures, fusion
+  /solver/          # interval/cardinality/SAT
+  /backend/         # ASM emitter
+/dfvm/              # sandbox runtime, loader, fixture layer
+/stdlib/            # std.core, std.json, std.sys.*, std.flow.orch, std.contracts
+/tooling/           # CLI, LSP, test runner, dfpkg signer/loader
+/docs/
+  README.md         # this file
+  SPEC.md           # cut-down spec
+  GRAMMAR.md        # ANTLR + abstract grammar notes
+  SEMANTICS.md      # typing & dynamic semantics
+  FLOWTOMIC.md      # case study details
+/examples/          # runnable samples
+/tests/             # unit/e2e tests (including 'test' blocks)
+```
+
+---
+
+## Build from source (proposal)
+
+Requirements:
+
+* JDK 21
+* ANTLR 4.x
+* ASM 9.x
+
+Suggested steps (Gradle example):
+
+```bash
+# generate parser
+./gradlew :compiler:grammar:generateGrammarSource
+
+# build compiler + stdlib + dfvm
+./gradlew build
+
+# compile a df++ file to dfpkg
+./gradlew :tooling:cli:run --args="build examples/hello.dfpp -o out/hello.dfpkg"
+
+# run under dfVM
+./gradlew :tooling:cli:run --args="run out/hello.dfpkg"
+```
+
+> Maven builds would mirror these tasks; concrete scripts will be added during implementation.
+
+---
+
+## Contributing
+
+* File issues with “spec” or “impl” labels.
+* PRs should include tests and, where relevant, spec updates.
+* Please keep the **keyword set small**, prefer **composition over inheritance**, and ensure any I/O path is **capability-checked** by dfVM.
+
+---
+
+## License
+
+* Language specification and docs: **CC BY 4.0** (proposed)
+* Reference implementation (compiler, dfVM, stdlib, tooling): **Apache 2.0** (proposed)
+
+---
+
+### Appendix: Keyword cheat-sheet
+
+| Category | Keywords                                       |
+| -------- | ---------------------------------------------- |
+| Modules  | `module`, `import`                             |
+| Types    | `type`                                         |
+| Code     | `fn`                                           |
+| Tasks    | `task`, `pre`, `act`, `pos`, `run`, `parallel` |
+| Bindings | `const`, `let`, `mut`                          |
+
+*(Note: `test 'name' { ... }` is a **tooling** construct — recognized by the test runner, ignored by codegen.)*
+
+---
+
+### Appendix: Mini example with `dfpkg` manifest
+
+```text
+::df++
+
+module example.flow
+import std.io as IO
+import std.sys.net as Net
+import std.json as Json
+
+type Post = { id: Int, title: String }
+
+mut posts: List<Post> = []
+
+task 'fetch posts' {
+  act {
+    let r = Net.httpGet("https://api.example.org/posts", {})
+    posts = Json.decode<List<Post>>(Json.parse(r.body.utf8()).getOrElse("{}"))
+              .getOrElse([])
+  }
+  pos posts.size() >= 0
+}
+
+fn main(): Unit = run('fetch posts').await()
+```
+
+`dfpkg.json` (sketch):
+
+```json
+{
+  "entry": "example.flow.Main.main",
+  "capabilities": {
+    "net": { "hosts": ["api.example.org:443"] },
+    "time": { "deterministic": true },
+    "rng": { "seed": 7 }
+  },
+  "jvmAllowlist": [],
+  "hashes": { "jar": "sha256:..." },
+  "signature": "ed25519:..."
+}
+```
+
+---
