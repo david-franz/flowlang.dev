@@ -1,0 +1,7 @@
+module unit.func
+fn add2(a: Int, b: Int) {
+    a + b
+}
+fn main() {
+    print(add2(3, 4))
+}

@@ -1,0 +1,7 @@
+module unit.pat
+fn main() {
+    print(match (true) {
+        true -> "T",
+        _    -> "F"
+    })
+}

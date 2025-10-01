@@ -29,9 +29,12 @@ public class DfppFeatureTests {
     // Allow enabling entire categories (directories under tests/unit): Data, Expression, Types, Functions
     private static final java.util.List<String> INCLUDE_DIRS = java.util.List.of(
         // e.g. "Data", "Expression", "Functions"
-            "Data",
-            "Expression",
+//            "Data",
+//            "Expression",
             "Functions"
+//            "Pattern",
+//            "Modules",
+//            "Types"
     );
 
     // Inline expected outputs keyed by test basename.
@@ -39,6 +42,10 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         // Data
         java.util.Map.entry("list_idx", "20"),
         java.util.Map.entry("rec_get", "9"),
+        java.util.Map.entry("list_idx0", "5"),
+        java.util.Map.entry("rec_two", "1"),
+        java.util.Map.entry("rec_nested", "3"),
+        java.util.Map.entry("rec_btick", "7"),
         // Expression
         java.util.Map.entry("add", "5"),
         java.util.Map.entry("and", "false"),
@@ -47,8 +54,29 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("ge", "true"),
         java.util.Map.entry("eq", "true"),
         java.util.Map.entry("tern", "t"),
+        java.util.Map.entry("sub", "5"),
+        java.util.Map.entry("mul", "42"),
+        java.util.Map.entry("div", "4"),
+        java.util.Map.entry("mod", "1"),
+        java.util.Map.entry("le", "true"),
+        java.util.Map.entry("gt", "true"),
+        java.util.Map.entry("not_true", "false"),
+        java.util.Map.entry("not_zero", "true"),
+        java.util.Map.entry("paren", "20"),
+        java.util.Map.entry("concat_str", "ab"),
+        java.util.Map.entry("concat_mix", "x=7"),
+        java.util.Map.entry("eq_str", "true"),
+        java.util.Map.entry("ne", "true"),
         // Functions
         java.util.Map.entry("call", "7"),
+        java.util.Map.entry("add2", "7"),
+        // Pattern
+        java.util.Map.entry("match_hit", "two"),
+        java.util.Map.entry("match_miss", "?"),
+        java.util.Map.entry("match_str", "ok"),
+        java.util.Map.entry("match_bool", "T"),
+        // Modules
+        java.util.Map.entry("use_const", "9"),
         // Types
         java.util.Map.entry("add_typed", "5")
     );

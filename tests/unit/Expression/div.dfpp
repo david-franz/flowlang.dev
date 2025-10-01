@@ -1,0 +1,4 @@
+module unit.expr
+fn main() {
+    print(8 / 2)
+}

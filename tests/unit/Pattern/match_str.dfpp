@@ -1,0 +1,7 @@
+module unit.pat
+fn main() {
+    print(match ("x") {
+        "x" -> "ok",
+        _    -> "no"
+    })
+}

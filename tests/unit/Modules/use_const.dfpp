@@ -1,0 +1,5 @@
+module unit.use
+import unit.libc as L
+fn main() {
+    print(L.v)
+}

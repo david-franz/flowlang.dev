@@ -1,9 +1,7 @@
 module unit.func
-
 fn id(x: Int) {
     x
 }
-
 fn main() {
     print(id(7))
 }

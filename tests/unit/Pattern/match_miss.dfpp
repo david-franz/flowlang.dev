@@ -1,0 +1,7 @@
+module unit.pat
+fn main() {
+    print(match (3) {
+        2 -> "two",
+        _ -> "?"
+    })
+}
