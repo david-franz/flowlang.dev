@@ -1,7 +1,5 @@
-module unit.types
-fn expectInt(x: Int): Int {
-    x
-}
+module unit.collections
+fn expectInt(x: Int): Int { x }
 fn main() {
     let xs: List<Int> = [1, 2, 3]
     print(expectInt(xs[0]))

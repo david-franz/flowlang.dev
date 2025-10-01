@@ -91,7 +91,11 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         // Generics / Collections
         java.util.Map.entry("rec_field_arith", "10"),
         java.util.Map.entry("list_annot", "20"),
-        java.util.Map.entry("list_index_to_param", "1")
+        java.util.Map.entry("list_index_to_param", "1"),
+        java.util.Map.entry("list_nested_index", "3"),
+        java.util.Map.entry("list_of_set_param", "ok"),
+        java.util.Map.entry("set_of_set_param", "ok"),
+        java.util.Map.entry("map_string_to_list_param", "ok")
         ,
         // Collections
         java.util.Map.entry("set_param", "ok"),
@@ -105,6 +109,7 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("param_type_required", "TypeException"),
         java.util.Map.entry("ret_mismatch", "TypeException"),
         java.util.Map.entry("list_mismatch", "TypeException"),
+        java.util.Map.entry("list_nested_mismatch", "TypeException"),
         java.util.Map.entry("set_bad_arity", "TypeException"),
         java.util.Map.entry("map_bad_arity", "TypeException"),
         // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.

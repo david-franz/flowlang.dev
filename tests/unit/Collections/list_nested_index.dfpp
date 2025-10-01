@@ -1,0 +1,5 @@
+module unit.collections
+fn main() {
+    let xss = [[1,2], [3]]
+    print(xss[1][0])
+}

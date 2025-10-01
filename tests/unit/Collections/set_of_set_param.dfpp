@@ -1,0 +1,3 @@
+module unit.collections
+fn takes(ss: Set<Set<Int>>): Unit { print("ok") }
+fn main() { print("ok") }

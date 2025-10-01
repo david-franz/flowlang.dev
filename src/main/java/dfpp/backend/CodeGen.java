@@ -220,6 +220,10 @@ public final class CodeGen {
             }
             case Ast.Index idx -> {
                 genExpr(mv, idx.base(), env, depth+1);
+                // For v1, indexing is only defined over List (ArrayList).
+                // Insert a CHECKCAST to satisfy the verifier when the base is not obviously an ArrayList
+                // (e.g., nested indexing where the intermediate value is typed as Object).
+                mv.visitTypeInsn(CHECKCAST, "java/util/ArrayList");
                 genExpr(mv, idx.index(), env, depth+1);
                 mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toInt", "(Ljava/lang/Object;)I", false);
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "get", "(I)Ljava/lang/Object;", false);
