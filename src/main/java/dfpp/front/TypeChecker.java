@@ -67,9 +67,7 @@ public final class TypeChecker {
             Type pt = resolveTypeRef(p.type());
             env.put(p.name(), pt);
         }
-        // return type
-        if (f.returnType() == null) error("Function '" + f.name() + "' missing return type at line " + f.line());
-        Type retDecl = resolveTypeRef(f.returnType());
+        // return type (infer when not declared)
         // body
         Type retActual;
         if (f.body() instanceof ExprBody eb) {
@@ -79,8 +77,27 @@ public final class TypeChecker {
         } else {
             retActual = Type.UNIT;
         }
-        if (retActual != retDecl) error("Function '" + f.name() + "' at line " + f.line()
-            + ": return type mismatch, expected " + retDecl + " but found " + retActual);
+        Type retDecl;
+        if (f.returnType() != null) {
+            retDecl = resolveTypeRef(f.returnType());
+            if (retActual != retDecl) {
+                error("Function '" + f.name() + "' at line " + f.line()
+                    + ": return type mismatch, expected " + retDecl + " but found " + retActual);
+            }
+        } else {
+            // no declared return type: infer it and record
+            retDecl = retActual;
+            String tn;
+            switch (retDecl) {
+                case INT    -> tn = "Int";
+                case STRING -> tn = "String";
+                case BOOL   -> tn = "Bool";
+                case UNIT   -> tn = "Unit";
+                default     -> tn = "Unknown";
+            }
+            TypeRef inferred = new TypeRef(tn, List.of());
+            functions.put(f.name(), new FnDecl(f.name(), f.params(), inferred, f.body(), f.line()));
+        }
     }
 
     private Type inferBlock(BlockBody bb, Map<String, Type> globals, Map<String, Type> env) {
@@ -129,13 +146,42 @@ public final class TypeChecker {
             if (t == null) error("Unknown variable '" + v.name() + "'");
             return t;
         }
+        if (expr instanceof ModuleField mf) {
+            String key = mf.moduleInternal() + "." + mf.name();
+            Type t = globals.get(key);
+            if (t == null) {
+                // try unqualified name (imported AST merged)
+                t = globals.get(mf.name());
+            }
+            if (t == null) error("Unknown module field '" + key + "'");
+            return t;
+        }
         if (expr instanceof Call c) {
             // built-in print
             if (c.callee() instanceof Var v2 && v2.name().equals("print") && c.args().size() == 1) {
                 inferExprType(c.args().get(0), globals, env);
                 return Type.UNIT;
             }
-            // user function
+            // module function call: dc2.greet(...)
+            if (c.callee() instanceof ModuleField mf) {
+                String key = mf.moduleInternal() + "." + mf.name();
+                FnDecl fd = functions.get(key);
+                if (fd == null) {
+                    // fallback to unqualified
+                    fd = functions.get(mf.name());
+                }
+                if (fd == null) error("Unknown function '" + key + "'");
+                if (c.args().size() != fd.params().size()) error("Function '" + mf.name() + "' called with wrong arity");
+                for (int i = 0; i < c.args().size(); i++) {
+                    Type at = inferExprType(c.args().get(i), globals, env);
+                    Param p = fd.params().get(i);
+                    Type pt = resolveTypeRef(p.type());
+                    if (at != pt) error("Argument " + (i+1) + " of function '" + mf.name() + "' at line " + p.line()
+                        + ": expected " + pt + " but found " + at);
+                }
+                return resolveTypeRef(fd.returnType());
+            }
+            // user function call: greet(...)
             if (c.callee() instanceof Var v3) {
                 FnDecl fd = functions.get(v3.name());
                 if (fd == null) error("Unknown function '" + v3.name() + "'");

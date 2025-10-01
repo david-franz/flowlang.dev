@@ -1,0 +1,9 @@
+module demo.custom3
+
+import demo.custom2 as dc2
+
+fn main() {
+    print(dc2.greeting)
+    //let r = dc2.greet("Dave2")
+    //print('greeting: ' + r)
+}

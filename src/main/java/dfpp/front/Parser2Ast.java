@@ -10,11 +10,17 @@ import org.antlr.v4.runtime.Token;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
 
 public final class Parser2Ast extends DfppBaseVisitor<Object> {
     private final java.util.Map<String,String> imports = new java.util.HashMap<>();
+
+    /** Returns the import alias->module mapping for this file. */
+    public Map<String,String> getImports() {
+        return imports;
+    }
 
     public Ast.Program build(DfppParser.ProgramContext p) {
         // process imports first

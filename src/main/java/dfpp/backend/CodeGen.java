@@ -300,7 +300,23 @@ public final class CodeGen {
                     mv.visitInsn(ACONST_NULL);
                     return;
                 }
-                // User function: callee must be simple name
+                // Module function call: Module.fn(...) => static call on module class
+                if (c.callee() instanceof Ast.ModuleField mf) {
+                    String mname = "f$" + mangle(mf.name());
+                    // Build Object[] args
+                    pushInt(mv, c.args().size());
+                    mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+                    for (int i=0;i<c.args().size();i++) {
+                        mv.visitInsn(DUP);
+                        pushInt(mv, i);
+                        genExpr(mv, c.args().get(i), env, depth+1);
+                        mv.visitInsn(AASTORE);
+                    }
+                    mv.visitMethodInsn(INVOKESTATIC, mf.moduleInternal(), mname,
+                        "([Ljava/lang/Object;)Ljava/lang/Object;", false);
+                    return;
+                }
+                // User function: simple name
                 if (c.callee() instanceof Ast.Var v2) {
                     String mname = "f$" + mangle(v2.name());
                     // Build Object[] args
@@ -312,10 +328,11 @@ public final class CodeGen {
                         genExpr(mv, c.args().get(i), env, depth+1);
                         mv.visitInsn(AASTORE);
                     }
-                    mv.visitMethodInsn(INVOKESTATIC, classNameInternal, mname, "([Ljava/lang/Object;)Ljava/lang/Object;", false);
-                } else {
-                    throw new RuntimeException("only simple function names supported in minimal v1");
+                    mv.visitMethodInsn(INVOKESTATIC, classNameInternal, mname,
+                        "([Ljava/lang/Object;)Ljava/lang/Object;", false);
+                    return;
                 }
+                throw new RuntimeException("only simple or module function calls supported in minimal v1");
             }
             default -> throw new RuntimeException("expr not supported: "+e.getClass());
         }

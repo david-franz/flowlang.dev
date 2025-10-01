@@ -5,17 +5,27 @@ import dfpp.ast.gen.DfppParser;
 import dfpp.front.Parser2Ast;
 import dfpp.front.TypeChecker;
 import dfpp.backend.CodeGen;
-import org.antlr.v4.runtime.*;
+import dfpp.ast.Ast.Top;
+import dfpp.ast.Ast.FnDecl;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Stream;
 
 public final class Driver {
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) {
+        try {
+            if (args.length < 2) {
             System.out.println("usage: dfpp <input.dfpp> <outClassName>");
             System.out.println("example: dfpp examples/hello.dfpp demo/hello/Main");
             return;
@@ -35,7 +45,31 @@ public final class Driver {
         });
 
         ParseTree tree = parser.program();
-        var ast = new Parser2Ast().build((DfppParser.ProgramContext) tree);
+        var astParser = new Parser2Ast();
+        var ast = astParser.build((DfppParser.ProgramContext) tree);
+        // Merge and inline imported modules (so their functions/values are visible)
+        for (var entry : astParser.getImports().entrySet()) {
+            String moduleName = entry.getValue();
+            Path filePath = findModuleFile(moduleName);
+            var impInput = CharStreams.fromPath(filePath);
+            var impLexer = new DfppLexer(impInput);
+            var impTokens = new CommonTokenStream(impLexer);
+            var impParser = new DfppParser(impTokens);
+            impParser.removeErrorListeners();
+            impParser.addErrorListener(new BaseErrorListener() {
+                @Override public void syntaxError(Recognizer<?, ?> r, Object off,
+                        int line, int col, String msg, RecognitionException e) {
+                    throw new RuntimeException(
+                        "parse error in imported module '"+moduleName+"' at "+line+":"+col+" "+msg);
+                }
+            });
+            var impAst = new Parser2Ast()
+                .build((DfppParser.ProgramContext) impParser.program());
+            for (Top t : impAst.tops()) {
+                if (t instanceof FnDecl f && f.name().equals("main")) continue;
+                ast.tops().add(t);
+            }
+        }
         // Static type checking (primitives only)
         try {
             TypeChecker.check(ast);
@@ -49,8 +83,8 @@ public final class Driver {
         CodeGen.writeToFile(bytes, outPath);
         System.out.println("wrote " + outPath);
 
-        // Load and run main if present
-        var loader = new java.net.URLClassLoader(new java.net.URL[]{ Path.of("out").toUri().toURL() });
+            // Load and run main if present
+            var loader = new java.net.URLClassLoader(new java.net.URL[]{ Path.of("out").toUri().toURL() });
         var cls = Class.forName(classIntName.replace('/', '.'), true, loader);
 
         try {
@@ -62,6 +96,31 @@ public final class Driver {
             }
         } catch (NoSuchMethodException nsme) {
             System.out.println("No df++ fn main() found; nothing to run.");
+        }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println("Driver error: " + ex.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private static Path findModuleFile(String moduleName) {
+        try (Stream<Path> files = Files.walk(Path.of("examples"))) {
+            return files
+                .filter(p -> p.toString().endsWith(".dfpp"))
+                .filter(p -> {
+                    try {
+                        return Files.lines(p)
+                            .map(String::trim)
+                            .anyMatch(l -> l.equals("module " + moduleName));
+                    } catch (IOException e) {
+                        return false;
+                    }
+                })
+                .findFirst()
+                .orElseThrow();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to search examples for module " + moduleName, e);
         }
     }
 }
