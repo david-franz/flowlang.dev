@@ -8,13 +8,15 @@
 
 ```bash
 ./gradlew clean build
-./gradlew run --args="examples/hello.dfpp demo.hello"
+./gradlew run --args="examples/hello_world.dfpp demo.hello"
 
 Expected output:
 
 ```
 wrote out/demo/hello.class
+
 == running df++ main ==
+
 Hello, df++!
 ```
 

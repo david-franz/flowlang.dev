@@ -1,0 +1,9 @@
+module demo.simple
+
+fn add(a: Int, b: Int): Int { a + b }
+
+fn main() {
+    let xs = [10, 20]
+    let r  = { n = add(xs[0], 5) }
+    print("n=" + r.n)
+}
