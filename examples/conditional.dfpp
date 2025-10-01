@@ -1,0 +1,7 @@
+module demo.cond
+
+// Demonstrate arithmetic, comparison, and ternary operator.
+fn main() {
+  print("2+3*4 = " + (2 + 3 * 4))
+  print("2+3*4 == 14? " + ((2 + 3 * 4 == 14) ? "yes" : "no"))
+}
