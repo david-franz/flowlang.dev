@@ -1,0 +1,7 @@
+module tests.rel
+
+fn main() {
+  print('lt? ' + (1 < 2))
+  print('ge? ' + (3 >= 3))
+  print('eq? ' + (4 == 5))
+}

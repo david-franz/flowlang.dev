@@ -1,0 +1,6 @@
+module tests.tern
+
+fn main() {
+  print(true ? 't' : 'f')
+  print(false ? 't' : 'f')
+}

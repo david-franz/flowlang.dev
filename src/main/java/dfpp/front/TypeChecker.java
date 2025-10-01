@@ -198,6 +198,22 @@ public final class TypeChecker {
             }
             error("Unsupported call expression");
         }
+        if (expr instanceof Ast.Match) {
+            // Minimal v1: allow match expressions without precise typing
+            return Type.UNKNOWN;
+        }
+        if (expr instanceof Ast.Record) {
+            return Type.UNKNOWN;
+        }
+        if (expr instanceof Ast.GetField) {
+            return Type.UNKNOWN;
+        }
+        if (expr instanceof Ast.ListLit) {
+            return Type.UNKNOWN;
+        }
+        if (expr instanceof Ast.Index) {
+            return Type.UNKNOWN;
+        }
         if (expr instanceof Bin b) {
             Type l = inferExprType(b.left(), globals, env);
             Type r = inferExprType(b.right(), globals, env);
@@ -207,6 +223,7 @@ public final class TypeChecker {
                 case "-", "*", "/", "%": return checkIntOp(l, r, b.op());
                 case "==", "!=": return Type.BOOL;
                 case "<", "<=", ">", ">=": checkIntOp(l, r, b.op()); return Type.BOOL;
+                case "&&", "||": return Type.BOOL;
                 default: error("Unsupported operator '" + b.op() + "'");
             }
         }

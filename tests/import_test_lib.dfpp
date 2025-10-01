@@ -1,0 +1,7 @@
+module demo.testlib
+
+let greeting = 'hey!!'
+
+fn greet(name: String) {
+  greeting + " " + name
+}

@@ -1,6 +1,5 @@
-module demo.list
+module tests.list
 
-// List literal and indexing
 fn main() {
   let xs = [10, 20, 30]
   print(xs[0])

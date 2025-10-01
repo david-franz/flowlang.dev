@@ -1,6 +1,5 @@
-module demo.pat
+module tests.patx
 
-// Pattern matching on integer literals and wildcard.
 fn main() {
   print(match (1) {
     1 -> "one",

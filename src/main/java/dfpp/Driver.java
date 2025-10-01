@@ -105,22 +105,28 @@ public final class Driver {
     }
 
     private static Path findModuleFile(String moduleName) {
-        try (Stream<Path> files = Files.walk(Path.of("examples"))) {
-            return files
-                .filter(p -> p.toString().endsWith(".dfpp"))
-                .filter(p -> {
-                    try {
-                        return Files.lines(p)
-                            .map(String::trim)
-                            .anyMatch(l -> l.equals("module " + moduleName));
-                    } catch (IOException e) {
-                        return false;
-                    }
-                })
-                .findFirst()
-                .orElseThrow();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to search examples for module " + moduleName, e);
+        // Search both examples/ and tests/ for a file that declares the requested module
+        List<Path> roots = List.of(Path.of("examples"), Path.of("tests"));
+        for (Path root : roots) {
+            if (!Files.exists(root)) continue;
+            try (java.util.stream.Stream<Path> files = Files.walk(root)) {
+                java.util.Optional<Path> hit = files
+                        .filter(p -> p.toString().endsWith(".dfpp"))
+                        .filter(p -> {
+                            try {
+                                return Files.lines(p)
+                                        .map(String::trim)
+                                        .anyMatch(l -> l.equals("module " + moduleName));
+                            } catch (IOException e) {
+                                return false;
+                            }
+                        })
+                        .findFirst();
+                if (hit.isPresent()) return hit.get();
+            } catch (IOException e) {
+                // keep searching other roots
+            }
         }
+        throw new RuntimeException("Failed to find module '" + moduleName + "' in examples/ or tests/");
     }
 }
