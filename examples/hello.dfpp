@@ -1,7 +1,7 @@
 module demo.hello
 
 // Simplest example: compute a constant
-const answer: Int = 40 + 2
+const answer: Int = 40 + 10
 
 fn main() {
   print("answer = " + answer)

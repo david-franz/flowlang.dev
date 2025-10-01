@@ -190,6 +190,14 @@ public final class CodeGen {
                     default   -> throw new RuntimeException("op not supported: "+b.op());
                 }
             }
+            case Ast.ModuleField mf -> {
+                // static field lookup on imported module/class
+                mv.visitFieldInsn(GETSTATIC,
+                    mf.moduleInternal(),
+                    mangle(mf.name()),
+                    "Ljava/lang/Object;");
+                break;
+            }
             case Ast.ListLit l -> {
                 mv.visitTypeInsn(NEW, "java/util/ArrayList");
                 mv.visitInsn(DUP);

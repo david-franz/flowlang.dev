@@ -24,7 +24,7 @@ public final class Ast {
     public record SExpr(Expr e) implements Stmt {}
 
     // Expressions (subset)
-public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField, ListLit, Index {}
+public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField, ListLit, Index, ModuleField {}
 
     public record LitInt(int value) implements Expr {}
     public record LitStr(String value) implements Expr {}
@@ -60,4 +60,7 @@ public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un
 
     /** Indexing: base[index] */
     public record Index(Expr base, Expr index) implements Expr {}
+
+    /** Access to a static field on an imported module/class */
+    public record ModuleField(String moduleInternal, String name) implements Expr {}
 }

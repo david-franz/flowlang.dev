@@ -12,8 +12,13 @@ import java.util.List;
 import static java.util.stream.Collectors.toList;
 
 public final class Parser2Ast extends DfppBaseVisitor<Object> {
+    private final java.util.Map<String,String> imports = new java.util.HashMap<>();
 
     public Ast.Program build(DfppParser.ProgramContext p) {
+        // process imports first
+        for (var idctx : p.importDecl()) {
+            visitImportDecl(idctx);
+        }
         var tops = new ArrayList<Ast.Top>();
         for (var t : p.topDecl()) {
             var top = (Ast.Top) visitTopDecl(t);
@@ -67,6 +72,13 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.letDecl()!=null)   return new Ast.SLet((Ast.LetDecl) visitLetDecl(ctx.letDecl()));
         if (ctx.expr()!=null)      return new Ast.SExpr((Ast.Expr) visitExpr(ctx.expr()));
         throw unsupported(ctx.start, "unsupported stmt");
+    }
+
+    public Object visitImportDecl(DfppParser.ImportDeclContext ctx) {
+        String moduleName = ctx.qid().getText();
+        String alias = ctx.ID().getText().replace("`", "");
+        imports.put(alias, moduleName);
+        return null;
     }
 
     // --------- Expressions (subset) ----------
@@ -158,9 +170,14 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
                         : op.args().expr().stream().map(e -> (Ast.Expr) visitExpr(e)).collect(toList());
                 base = new Ast.Call(new Ast.Call(base, List.of()), args); // noop; we don't implement member methods in v1
             } else if (op.DOT()!=null && op.LP()==null) {
-                // field access: a.b
                 String name = op.ident().getText().replace("`", "");
-                base = new Ast.GetField(base, name);
+                if (base instanceof Ast.Var v && imports.containsKey(v.name())) {
+                    String mod = imports.get(v.name());
+                    base = new Ast.ModuleField(mod.replace('.', '/'), name);
+                } else {
+                    // record field access
+                    base = new Ast.GetField(base, name);
+                }
             } else if (op.DOT()!=null) {
                 // method call not supported in minimal v1
                 throw unsupported(op.DOT().getSymbol(), "method call not supported in minimal v1");

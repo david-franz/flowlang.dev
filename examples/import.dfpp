@@ -1,0 +1,15 @@
+module demo.import_demo
+
+// Import statements are currently no-ops in minimal v1 but must parse
+import demo.record as R
+import demo.list as L
+import demo.hello as H
+
+// Use record and list features to show import doesn't break parsing
+fn main() {
+  print(H.answer)
+  let rec = { id = 42, title = "import test" }
+  print("rec.id = " + rec.id)
+  let xs = [10, 20]
+  print("xs[1] = " + xs[1])
+}
