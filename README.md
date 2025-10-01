@@ -17,7 +17,7 @@ This repo contains a working proof-of-concept compiler and runtime for a minimal
 
 - Frontend
   - ANTLR4 grammar and parser → AST (Java records)
-  - Minimal type checker for primitives (Int, String, Bool, Unit). Checks const/let, function parameter types (when declared), basic return type consistency. Partial inference for return types within tests.
+- Minimal type checker for primitives (Int, String, Bool, Unit) plus basic first-order generics. Recognizes List<T>/Set<T>/Map<K,V> in annotations and infers element types for list literals and record field types for `{ ... }` and `.` access. Checks const/let, function parameter types (when declared), and basic return type consistency. Partial inference for return types within tests.
 - Codegen/runtime
   - ASM bytecode emitter, single class per compiled unit, static fields for top-level values
   - Expressions: arithmetic (+ - * / %), comparisons (== != < <= > >=), boolean (! && || with short-circuit), ternary (cond ? a : b), parentheses
