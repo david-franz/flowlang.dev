@@ -1,0 +1,5 @@
+module unit.collections
+fn bad(s: Set<Int, String>): Unit {
+    print("x")
+}
+fn main() { print("z") }

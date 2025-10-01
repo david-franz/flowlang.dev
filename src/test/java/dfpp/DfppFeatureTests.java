@@ -29,6 +29,7 @@ public class DfppFeatureTests {
     // Allow enabling entire categories (directories under tests/unit): Data, Expression, Types, Functions
     private static final java.util.List<String> INCLUDE_DIRS = java.util.List.of(
         // e.g. "Data", "Expression", "Functions"
+            "Collections",
             "Data",
             "Expression",
             "Functions",
@@ -91,6 +92,10 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("rec_field_arith", "10"),
         java.util.Map.entry("list_annot", "20"),
         java.util.Map.entry("list_index_to_param", "1")
+        ,
+        // Collections
+        java.util.Map.entry("set_param", "ok"),
+        java.util.Map.entry("map_param", "ok")
 );
 
     // Tests that are expected to error. The value is the expected exception simple class name
@@ -100,6 +105,8 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("param_type_required", "TypeException"),
         java.util.Map.entry("ret_mismatch", "TypeException"),
         java.util.Map.entry("list_mismatch", "TypeException"),
+        java.util.Map.entry("set_bad_arity", "TypeException"),
+        java.util.Map.entry("map_bad_arity", "TypeException"),
         // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
         java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException")
     );

@@ -1,0 +1,5 @@
+module unit.collections
+fn bad(m: Map<Int>): Unit {
+    print("x")
+}
+fn main() { print("z") }

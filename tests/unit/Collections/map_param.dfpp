@@ -1,0 +1,7 @@
+module unit.collections
+fn takesMap(m: Map<String, Int>): Unit {
+    print("ok")
+}
+fn main() {
+    print("ok")
+}
