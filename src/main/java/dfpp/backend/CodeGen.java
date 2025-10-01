@@ -83,11 +83,12 @@ public final class CodeGen {
         locals.clear(); nextLocal = 0;
 
         // bind parameters as locals 0..n-1
-        for (int i=0;i<fn.params().size();i++) {
+        for (int i = 0; i < fn.params().size(); i++) {
             mv.visitVarInsn(ALOAD, 0);        // args
             pushInt(mv, i);
             mv.visitInsn(AALOAD);             // args[i]
-            int slot = allocLocal(fn.params().get(i));
+            Param p = fn.params().get(i);
+            int slot = allocLocal(p.name());
             mv.visitVarInsn(ASTORE, slot);
         }
 

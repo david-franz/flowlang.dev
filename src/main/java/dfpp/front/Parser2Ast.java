@@ -1,6 +1,8 @@
 package dfpp.front;
 
 import dfpp.ast.Ast.*;
+import dfpp.ast.Ast.TypeRef;
+import dfpp.ast.Ast.Param;
 import dfpp.ast.Ast;
 import dfpp.ast.gen.DfppBaseVisitor;
 import dfpp.ast.gen.DfppParser;
@@ -37,22 +39,31 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
     }
 
     public Object visitConstDecl(DfppParser.ConstDeclContext ctx) {
-        var name = ident(ctx.ident());
+        String name = ident(ctx.ident());
+        TypeRef type = ctx.typeRef()!=null ? (TypeRef) visit(ctx.typeRef()) : null;
         var expr = (Ast.Expr) visitExpr(ctx.expr());
-        return new Ast.ConstDecl(name, expr);
+        int line = ctx.start.getLine();
+        return new Ast.ConstDecl(name, type, expr, line);
     }
 
     public Object visitLetDecl(DfppParser.LetDeclContext ctx) {
-        var name = ident(ctx.ident());
+        String name = ident(ctx.ident());
+        TypeRef type = ctx.typeRef()!=null ? (TypeRef) visit(ctx.typeRef()) : null;
         var expr = (Ast.Expr) visitExpr(ctx.expr());
-        return new Ast.LetDecl(name, expr);
+        int line = ctx.start.getLine();
+        return new Ast.LetDecl(name, type, expr, line);
     }
 
     public Object visitFnDecl(DfppParser.FnDeclContext ctx) {
         var name = ctx.ident().getText().replace("`", "");
-        var params = new ArrayList<String>();
+        var params = new ArrayList<Param>();
         if (ctx.paramList()!=null) {
-            for (var p : ctx.paramList().param()) params.add(ident(p.ident()));
+            for (var p : ctx.paramList().param()) {
+                String pname = ident(p.ident());
+                TypeRef ptype = p.typeRef()!=null ? (TypeRef) visit(p.typeRef()) : null;
+                int pline = p.start.getLine();
+                params.add(new Param(pname, ptype, pline));
+            }
         }
         Ast.Body body;
         if (ctx.block()!=null) {
@@ -70,7 +81,9 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         } else {
             body = new Ast.ExprBody((Ast.Expr) visitExpr(ctx.expr()));
         }
-        return new Ast.FnDecl(name, params, body);
+        TypeRef returnType = ctx.typeRef()!=null ? (TypeRef) visit(ctx.typeRef()) : null;
+        int line = ctx.start.getLine();
+        return new Ast.FnDecl(name, params, returnType, body, line);
     }
 
     public Object visitStmt(DfppParser.StmtContext ctx) {
@@ -88,6 +101,18 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
     }
 
     // --------- Expressions (subset) ----------
+
+    @Override
+    public Object visitNamedOrAppliedType(DfppParser.NamedOrAppliedTypeContext ctx) {
+        String name = ctx.qid().getText();
+        var args = new java.util.ArrayList<TypeRef>();
+        if (ctx.typeArgs() != null) {
+            for (var tr : ctx.typeArgs().typeRef()) {
+                args.add((TypeRef) visit(tr));
+            }
+        }
+        return new TypeRef(name, args);
+    }
 
     public Object visitExpr(DfppParser.ExprContext ctx) {
         return visit(ctx.conditional());

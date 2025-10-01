@@ -3,16 +3,24 @@ package dfpp.ast;
 import java.util.List;
 
 public final class Ast {
+    // Type references (with optional type arguments)
+    public record TypeRef(String name, List<TypeRef> args) {}
+    // Function parameter with type annotation and source line
+    public record Param(String name, TypeRef type, int line) {}
+
     // Program
     public record Program(List<Top> tops) {}
 
     // Top-level decls
     public sealed interface Top permits ConstDecl, LetDecl, FnDecl {}
 
-    public record ConstDecl(String name, Expr expr) implements Top {}
-    public record LetDecl(String name, Expr expr) implements Top {}
+    /** Top-level constant with optional type annotation. */
+    public record ConstDecl(String name, TypeRef type, Expr expr, int line) implements Top {}
+    /** Top-level let-binding with optional type annotation. */
+    public record LetDecl(String name, TypeRef type, Expr expr, int line) implements Top {}
 
-    public record FnDecl(String name, List<String> params, Body body) implements Top {}
+    /** Function declaration: name, parameters with types, return type, body, and source line. */
+    public record FnDecl(String name, List<Param> params, TypeRef returnType, Body body, int line) implements Top {}
     public sealed interface Body permits ExprBody, BlockBody {}
     public record ExprBody(Expr expr) implements Body {}
     public record BlockBody(List<Stmt> stmts, Expr resultOpt) implements Body {}

@@ -3,6 +3,7 @@ package dfpp;
 import dfpp.ast.gen.DfppLexer;
 import dfpp.ast.gen.DfppParser;
 import dfpp.front.Parser2Ast;
+import dfpp.front.TypeChecker;
 import dfpp.backend.CodeGen;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -35,6 +36,13 @@ public final class Driver {
 
         ParseTree tree = parser.program();
         var ast = new Parser2Ast().build((DfppParser.ProgramContext) tree);
+        // Static type checking (primitives only)
+        try {
+            TypeChecker.check(ast);
+        } catch (TypeChecker.TypeException ex) {
+            System.err.println("Type error: " + ex.getMessage());
+            return;
+        }
 
         byte[] bytes = CodeGen.compile(classIntName, ast);
         var outPath = Path.of("out", classIntName + ".class");

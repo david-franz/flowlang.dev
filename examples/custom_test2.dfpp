@@ -1,0 +1,12 @@
+module demo.custom2
+
+//let x: Int = 'hello'
+
+fn greet(name: String): Int {
+    3//"hello " + name
+}
+
+fn main() {
+    let r = greet("Dave")
+    print('greeting: ' + r)
+}
