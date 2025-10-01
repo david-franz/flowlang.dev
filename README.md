@@ -9,6 +9,13 @@
 ```bash
 ./gradlew clean build
 ./gradlew run --args="examples/hello.dfpp demo.hello"
+
+Expected output:
+
+```
+wrote out/demo/hello.class
+== running df++ main ==
+Hello, df++!
 ```
 
 ## Current status (v1 POC)
@@ -17,11 +24,16 @@ This repo contains a working proof-of-concept compiler and runtime for a minimal
 
 - Frontend
   - ANTLR4 grammar and parser → AST (Java records)
-- Minimal type checker for primitives (Int, String, Bool, Unit) plus basic first-order generics. Recognizes List<T>/Set<T>/Map<K,V> in annotations and infers element types for list literals and record field types for `{ ... }` and `.` access. Checks const/let, function parameter types (when declared), and basic return type consistency. Partial inference for return types within tests.
+  - Type checker: primitives (Int, String, Bool, Unit) plus basic first-order generics and structural records.
+    - Recognizes List<T>/Set<T>/Map<K,V> in annotations and validates type arity (e.g., Set requires 1, Map requires 2 args)
+    - Infers element types for list literals; flags element type mismatches
+    - Infers record field types for `{ ... }` and propagates through `.` access
+    - Supports nested collections in annotations and expression typing (e.g., List<List<Int>>; List<Set<Int>>; Map<String, List<Int>>)
+    - Checks const/let, function parameter types (when declared), and basic return type consistency; best-effort return inference for nominal shapes
 - Codegen/runtime
   - ASM bytecode emitter, single class per compiled unit, static fields for top-level values
   - Expressions: arithmetic (+ - * / %), comparisons (== != < <= > >=), boolean (! && || with short-circuit), ternary (cond ? a : b), parentheses
-  - Data: list literals + indexing; record literals + field access (stored as Map)
+  - Data: list literals + indexing (with verifier-safe nested indexing); record literals + field access (stored as Map)
   - Functions: definitions and calls, multiple parameters, built-in print(x)
   - Modules/imports: imported df++ modules are merged into the current compilation unit; module-qualified names (Alias.x, Alias.f(...)) resolve to the current class
   - Minimal runtime helpers (dfpp.rt.Rt) for numeric ops, comparisons, truthiness, string concatenation
@@ -29,7 +41,21 @@ This repo contains a working proof-of-concept compiler and runtime for a minimal
   - Unit tests live under tests/unit/<Category>
   - JUnit harness compiles and runs df++ files, compares stdout to inline EXPECTED values, aggregates results, and writes build/dfpp-tests.txt
   - You can enable categories or individual tests in src/test/java/dfpp/DfppFeatureTests.java via INCLUDE_DIRS and INCLUDE
+  - Categories include: Data, Expression, Functions, Pattern, Modules, Types, Collections
   - Some tests assert failures (e.g., missing param types, return mismatch) via EXPECTED_ERROR and are considered passing when the expected exception is thrown
+
+
+### Recent updates
+
+- Typing
+  - Structural support for List<T>, Set<T>, Map<K,V> in the type checker (arity-validated)
+  - Inference for list literals (element type unification) and record literals/field access
+  - Nested collections supported in annotations and expressions (e.g., List<List<Int>>, List<Set<Int>>, Map<String, List<Int>>)
+  - Best‑effort return type inference for nominal shapes (primitives and collections)
+- Code generation
+  - Nested list indexing is verifier‑safe (CHECKCAST ArrayList before get)
+- Tests
+  - New Collections test suite; moved list tests under Collections; added nested collections positive/negative tests
 
 Known limitations (intentional for now):
 

@@ -1,0 +1,5 @@
+module demo.hello
+
+fn main() {
+    print("Hello, df++!")
+}
