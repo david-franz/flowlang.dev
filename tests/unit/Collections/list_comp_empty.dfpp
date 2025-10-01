@@ -1,0 +1,5 @@
+module tests.collections.list_comp_empty
+
+fn main() {
+  print([x for x in [1,2] if x > 10])
+}

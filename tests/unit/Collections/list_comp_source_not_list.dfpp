@@ -1,0 +1,5 @@
+module tests.collections.list_comp_source_not_list
+
+fn main() {
+  print([x for x in 123])
+}

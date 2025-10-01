@@ -1,0 +1,5 @@
+module tests.collections.list_comp_basic
+
+fn main() {
+  print([x * x for x in [1,2,3]])
+}

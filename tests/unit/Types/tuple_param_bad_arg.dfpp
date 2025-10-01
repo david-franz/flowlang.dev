@@ -1,0 +1,7 @@
+module tests.types.tuple_param_bad_arg
+
+fn f(p: (Int, String)): Int = 1
+
+fn main() {
+  print(f(123))
+}

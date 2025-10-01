@@ -204,6 +204,51 @@ fn summarize(us: List<User>): Map<String, Int> = {
 }
 ```
 
+
+
+### Python-style list comprehensions (v1)
+
+You can build lists using a compact Python-like syntax:
+
+```text
+::df++
+
+fn demo(): Unit = {
+  let xs = [1,2,3,4,5]
+  // map only
+  print([x * x for x in xs])              // => [1, 4, 9, 16, 25]
+  // filter with guard
+  print([x for x in xs if x % 2 == 1])    // => [1, 3, 5]
+}
+```
+
+Notes:
+
+- Current v1 supports a single generator with an optional `if` guard.
+- The source (`in` right-hand side) must be a `List<T>`; element type `T` binds the loop variable.
+- The result type is `List<U>`, where `U` is the type of the element expression.
+
+### Tuple types (types only in v1)
+
+Tuple types can be written using parentheses, e.g. `(Int, String, Bool)`. They are accepted in type annotations and propagate through the type checker.
+
+```text
+::df++
+
+fn usePair(p: (Int, String)): Unit = {
+  // …
+}
+```
+
+Limitations in v1:
+
+- Tuple literals and destructuring are not implemented yet (types only). You cannot construct a tuple value at runtime yet.
+- Pattern matching over tuple shapes is not available in v1.
+
+### Unary minus
+
+Unary numeric negation is supported (e.g., `-x`, `-1`).
+
 ### Contracts & Static Checks
 
 ```text

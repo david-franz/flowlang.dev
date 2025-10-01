@@ -1,0 +1,6 @@
+module tests.collections.list_comp_from_let
+
+fn main() {
+  let xs = [1,2,3,4]
+  print([x + 1 for x in xs])
+}

@@ -106,6 +106,11 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         // Collections
         java.util.Map.entry("set_param", "ok"),
         java.util.Map.entry("map_param", "ok"),
+        // List comprehension
+        java.util.Map.entry("list_comp_basic", "[1, 4, 9]"),
+        java.util.Map.entry("list_comp_filter", "[1, 3, 5]"),
+        java.util.Map.entry("list_comp_from_let", "[2, 3, 4, 5]"),
+        java.util.Map.entry("list_comp_empty", "[]"),
         // Tasks
         java.util.Map.entry("single_run", "A"),
         java.util.Map.entry("two_runs", "A\nB"),
@@ -143,7 +148,11 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
                 java.util.Map.entry("const_mismatch", "TypeException"),
                 java.util.Map.entry("let_mismatch", "TypeException"),
                 // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
-        java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException")
+        java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException"),
+        // Tuple type errors (types only in v1)
+        java.util.Map.entry("tuple_param_bad_arg", "TypeException"),
+        java.util.Map.entry("tuple_ret_mismatch", "TypeException"),
+        java.util.Map.entry("list_comp_source_not_list", "TypeException")
     );
 
 

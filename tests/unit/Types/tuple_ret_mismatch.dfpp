@@ -1,0 +1,5 @@
+module tests.types.tuple_ret_mismatch
+
+fn f(): (Int, String) = 1
+
+fn main() { print(0) }
