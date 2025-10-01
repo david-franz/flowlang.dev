@@ -1,0 +1,7 @@
+module unit.tasks
+
+task 'A' { act { print("A") } }
+
+task 'BC' { act { print("B") } }
+
+fn main() { run('A').then("B" + "C") }

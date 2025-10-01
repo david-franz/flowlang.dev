@@ -1,0 +1,3 @@
+module lib.tasks
+
+task 'Lib' { act { print("L") } }
