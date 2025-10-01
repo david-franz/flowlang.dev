@@ -48,7 +48,10 @@ public final class Driver {
         try {
             Method m = cls.getMethod("f$main", Object[].class);
             System.out.println("== running df++ main ==");
-            m.invoke(null, (Object) new Object[0]); // varargs tramp
+            Object ret = m.invoke(null, (Object) new Object[0]); // varargs tramp
+            if (ret != null) {
+                System.out.println(ret);
+            }
         } catch (NoSuchMethodException nsme) {
             System.out.println("No df++ fn main() found; nothing to run.");
         }

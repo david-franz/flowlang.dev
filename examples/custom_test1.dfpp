@@ -1,0 +1,9 @@
+module demo.custom
+
+fn greet(name: String) {
+    "hello " + name
+}
+
+fn main() {
+    print(greet("Bob"))
+}

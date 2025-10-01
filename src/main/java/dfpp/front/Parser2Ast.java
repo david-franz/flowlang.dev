@@ -59,7 +59,13 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
             var blk = ctx.block();
             var stmts = new ArrayList<Ast.Stmt>();
             for (var s : blk.stmt()) stmts.add((Ast.Stmt) visitStmt(s));
-            var res = blk.expr()!=null ? (Ast.Expr) visitExpr(blk.expr()) : null;
+            Ast.Expr res = null;
+            if (blk.expr()!=null) {
+                res = (Ast.Expr) visitExpr(blk.expr());
+            } else if (!stmts.isEmpty() && stmts.get(stmts.size()-1) instanceof Ast.SExpr se) {
+                res = se.e();
+                stmts.remove(stmts.size()-1);
+            }
             body = new Ast.BlockBody(stmts, res);
         } else {
             body = new Ast.ExprBody((Ast.Expr) visitExpr(ctx.expr()));
