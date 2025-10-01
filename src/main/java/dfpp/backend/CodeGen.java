@@ -233,6 +233,27 @@ public final class CodeGen {
                 mv.visitInsn(ACONST_NULL);
                 mv.visitLabel(end);
             }
+            case Ast.Record r -> {
+                // record literal -> java.util.HashMap<String,Object>
+                mv.visitTypeInsn(NEW, "java/util/HashMap");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
+                for (var ent : r.fields().entrySet()) {
+                    mv.visitInsn(DUP);
+                    mv.visitLdcInsn(ent.getKey());
+                    genExpr(mv, ent.getValue(), env, depth+1);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/HashMap", "put",
+                        "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", false);
+                    mv.visitInsn(POP);
+                }
+            }
+            case Ast.GetField gf -> {
+                // record field access via Map.get(key)
+                genExpr(mv, gf.base(), env, depth+1);
+                mv.visitLdcInsn(gf.name());
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get",
+                    "(Ljava/lang/Object;)Ljava/lang/Object;", true);
+            }
             case Ast.Ternary t -> {
                 var elseL = new Label(); var end = new Label();
                 genExpr(mv, t.cond(), env, depth+1);

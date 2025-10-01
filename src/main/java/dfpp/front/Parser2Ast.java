@@ -157,9 +157,13 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
                 var args = op.args()==null ? List.<Ast.Expr>of()
                         : op.args().expr().stream().map(e -> (Ast.Expr) visitExpr(e)).collect(toList());
                 base = new Ast.Call(new Ast.Call(base, List.of()), args); // noop; we don't implement member methods in v1
+            } else if (op.DOT()!=null && op.LP()==null) {
+                // field access: a.b
+                String name = op.ident().getText().replace("`", "");
+                base = new Ast.GetField(base, name);
             } else if (op.DOT()!=null) {
-                // ignore field access in minimal v1 (will fail in codegen if used)
-                throw unsupported(op.DOT().getSymbol(), "member access not supported in minimal v1");
+                // method call not supported in minimal v1
+                throw unsupported(op.DOT().getSymbol(), "method call not supported in minimal v1");
             } else if (op.LSB()!=null) {
                 throw unsupported(op.LSB().getSymbol(), "indexing not supported in minimal v1");
             }
@@ -171,8 +175,9 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.literal()!=null) return visitLiteral(ctx.literal());
         if (ctx.expr()!=null)    return new Ast.Paren((Ast.Expr) visitExpr(ctx.expr()));
         if (ctx.matchExpr()!=null) return visitMatchExpr(ctx.matchExpr());
+        if (ctx.recordLit()!=null) return visitRecordLit(ctx.recordLit());
         if (ctx.ident()!=null)   return new Ast.Var(ident(ctx.ident()));
-        if (ctx.recordLit()!=null || ctx.arrayLit()!=null || ctx.runCall()!=null || ctx.lambdaExpr()!=null)
+        if (ctx.arrayLit()!=null || ctx.runCall()!=null || ctx.lambdaExpr()!=null)
             throw unsupported(ctx.start, "construct not supported in minimal v1");
         return null;
     }
@@ -208,6 +213,16 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
             if (litObj instanceof Ast.LitBool lb) return new Ast.PLitBool(lb.value());
         }
         throw unsupported(ctx.start, "pattern not supported in minimal v1");
+    }
+
+    public Object visitRecordLit(DfppParser.RecordLitContext ctx) {
+        var map = new java.util.LinkedHashMap<String, Ast.Expr>();
+        for (var rf : ctx.recField()) {
+            String name = ident(rf.ident());
+            Ast.Expr val = (Ast.Expr) visitExpr(rf.expr());
+            map.put(name, val);
+        }
+        return new Ast.Record(map);
     }
 
     private static String ident(DfppParser.IdentContext id) {

@@ -1,0 +1,8 @@
+module demo.record
+
+// Record literal and field access (stored as java.util.HashMap)
+fn main() {
+  let rec = { id = 123, title = "df++" }
+  print("id=" + rec.id)
+  print("title=" + rec.title)
+}
