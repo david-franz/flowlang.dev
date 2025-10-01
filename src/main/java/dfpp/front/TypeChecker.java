@@ -175,9 +175,11 @@ public final class TypeChecker {
                 for (int i = 0; i < c.args().size(); i++) {
                     Type at = inferExprType(c.args().get(i), globals, env);
                     Param p = fd.params().get(i);
+                    if (p.type() != null) {
                     Type pt = resolveTypeRef(p.type());
                     if (at != pt) error("Argument " + (i+1) + " of function '" + mf.name() + "' at line " + p.line()
                         + ": expected " + pt + " but found " + at);
+                }
                 }
                 return resolveTypeRef(fd.returnType());
             }
@@ -190,9 +192,11 @@ public final class TypeChecker {
                 for (int i = 0; i < c.args().size(); i++) {
                     Type at = inferExprType(c.args().get(i), globals, env);
                     Param p = fd.params().get(i);
+                    if (p.type() != null) {
                     Type pt = resolveTypeRef(p.type());
                     if (at != pt) error("Argument " + (i+1) + " of function '" + v3.name() + "' at line " + p.line()
                         + ": expected " + pt + " but found " + at);
+                }
                 }
                 return resolveTypeRef(fd.returnType());
             }
@@ -250,6 +254,7 @@ public final class TypeChecker {
     }
 
     private static Type resolveTypeRef(TypeRef tref) {
+        if (tref == null) return Type.UNKNOWN;
         switch (tref.name()) {
             case "Int": return Type.INT;
             case "String": return Type.STRING;

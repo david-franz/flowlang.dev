@@ -1,0 +1,5 @@
+module unit.types
+const a: Int = 5
+fn main() {
+    print(a)
+}

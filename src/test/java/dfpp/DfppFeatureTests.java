@@ -78,9 +78,26 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         // Modules
         java.util.Map.entry("lib_const", "9"),
         java.util.Map.entry("use_const", "9"),
+        java.util.Map.entry("infer_cross_fn_use", "42"),
         // Types
-        java.util.Map.entry("add_typed", "5")
+        java.util.Map.entry("add_typed", "5"),
+        java.util.Map.entry("infer_ret_int", "5"),
+        java.util.Map.entry("infer_ret_bool", "true"),
+        java.util.Map.entry("infer_ret_string", "hi x"),
+        java.util.Map.entry("const_decl", "5"),
+        java.util.Map.entry("let_infer", "6")
     );
+
+    // Tests that are expected to error. The value is the expected exception simple class name
+    // (e.g., TypeException, NoSuchMethodException). If the thrown exception's simple name matches,
+    // the test is considered passed.
+    private static final java.util.Map<String, String> EXPECTED_ERROR = java.util.Map.ofEntries(
+        java.util.Map.entry("param_type_required", "TypeException"),
+        java.util.Map.entry("ret_mismatch", "TypeException"),
+        // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
+        java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException")
+    );
+
 
     @Test
     public void runIncludedDfppTests() throws Exception {
@@ -142,7 +159,9 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
             return new Result(base, expectedStr, actualStr, ok, note);
         } catch (Exception ex) {
             System.out.println("[TEST] " + base + " ERROR: " + ex.getMessage());
-            return new Result(base, EXPECTED.get(base), "<error>", false, ex.getClass().getSimpleName());
+            String expectedErr = EXPECTED_ERROR.get(base);
+            boolean match = expectedErr != null && ex.getClass().getSimpleName().equals(expectedErr);
+            return new Result(base, EXPECTED.get(base), "<error>", match, ex.getClass().getSimpleName());
         }
     }
 

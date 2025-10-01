@@ -1,0 +1,5 @@
+module unit.tuse
+import unit.tlib as L
+fn main() {
+    print(L.inc(41))
+}

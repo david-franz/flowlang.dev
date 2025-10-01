@@ -1,0 +1,5 @@
+module unit.types
+fn bad(x) = x
+fn main() {
+    print(0)
+}

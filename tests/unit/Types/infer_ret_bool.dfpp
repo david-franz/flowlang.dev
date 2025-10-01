@@ -1,0 +1,5 @@
+module unit.types
+fn isPos(x: Int) = x > 0
+fn main() {
+    print(isPos(1))
+}
