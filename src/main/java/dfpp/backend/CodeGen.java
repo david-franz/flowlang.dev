@@ -300,6 +300,13 @@ public final class CodeGen {
                 genExpr(mv, idx.index(), env, depth+1);
                 mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "index", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", false);
             }
+            case Ast.Slice sl -> {
+                genExpr(mv, sl.base(), env, depth+1);
+                if (sl.startOpt()!=null) { genExpr(mv, sl.startOpt(), env, depth+1); } else { mv.visitInsn(ACONST_NULL); }
+                if (sl.endOpt()!=null)   { genExpr(mv, sl.endOpt(), env, depth+1);   } else { mv.visitInsn(ACONST_NULL); }
+                if (sl.stepOpt()!=null)  { genExpr(mv, sl.stepOpt(), env, depth+1);  } else { mv.visitInsn(ACONST_NULL); }
+                mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "slice", "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", false);
+            }
             case Ast.Match m -> {
                 // pattern matching on literals and wildcard (minimal v1)
                 Label end = new Label();

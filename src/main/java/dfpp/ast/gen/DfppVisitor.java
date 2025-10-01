@@ -208,6 +208,12 @@ public interface DfppVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitPostfixOp(DfppParser.PostfixOpContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link DfppParser#sliceSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSliceSpec(DfppParser.SliceSpecContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link DfppParser#primary}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

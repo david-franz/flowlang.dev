@@ -111,6 +111,11 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("list_comp_filter", "[1, 3, 5]"),
         java.util.Map.entry("list_comp_from_let", "[2, 3, 4, 5]"),
         java.util.Map.entry("list_comp_empty", "[]"),
+        // List slicing
+        java.util.Map.entry("slice_basic", "[2, 3, 4]"),
+        java.util.Map.entry("slice_defaults", "[1, 2]\n[3]"),
+        java.util.Map.entry("slice_step", "[1, 3, 5]"),
+        java.util.Map.entry("slice_negative", "[3, 4, 5]\n[5, 3]"),
         // Tasks
         java.util.Map.entry("single_run", "A"),
         java.util.Map.entry("two_runs", "A\nB"),

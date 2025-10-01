@@ -1,0 +1,6 @@
+module tests.collections.slice_negative
+
+fn main() {
+  print([1,2,3,4,5][-3:])
+  print([1,2,3,4,5][4:0:-2])
+}

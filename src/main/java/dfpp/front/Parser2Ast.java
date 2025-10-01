@@ -278,8 +278,23 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
                 // method call not supported in minimal v1
                 throw unsupported(op.DOT().getSymbol(), "method call not supported in minimal v1");
             } else if (op.LSB()!=null) {
-                Ast.Expr idx = (Ast.Expr) visitExpr(op.expr());
-                base = new Ast.Index(base, idx);
+                // Distinguish index vs slice via sliceSpec()
+                var ss = op.getRuleContexts(dfpp.ast.gen.DfppParser.SliceSpecContext.class);
+                dfpp.ast.gen.DfppParser.SliceSpecContext spec = ss.isEmpty()? null : ss.get(0);
+                if (spec == null) {
+                    // fallback to single expr child
+                    var exprs = op.getRuleContexts(dfpp.ast.gen.DfppParser.ExprContext.class);
+                    Ast.Expr idx = (Ast.Expr) visitExpr(exprs.get(0));
+                    base = new Ast.Index(base, idx);
+                } else if (spec.index != null) {
+                    Ast.Expr idx = (Ast.Expr) visitExpr(spec.index);
+                    base = new Ast.Index(base, idx);
+                } else {
+                    Ast.Expr start = spec.start != null ? (Ast.Expr) visitExpr(spec.start) : null;
+                    Ast.Expr end   = spec.end   != null ? (Ast.Expr) visitExpr(spec.end)   : null;
+                    Ast.Expr step  = spec.step  != null ? (Ast.Expr) visitExpr(spec.step)  : null;
+                    base = new Ast.Slice(base, start, end, step);
+                }
             }
         }
         return base;

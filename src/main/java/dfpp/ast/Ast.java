@@ -34,7 +34,7 @@ public final class Ast {
     public record SExpr(Expr e) implements Stmt {}
 
     // Expressions (subset)
-public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField, ListLit, ListComp, Index, ModuleField, RunTask {}
+public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField, ListLit, ListComp, Index, Slice, ModuleField, RunTask {}
 
     public record LitInt(int value) implements Expr {}
     public record LitStr(String value) implements Expr {}
@@ -73,6 +73,9 @@ public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un
 
     /** Indexing: base[index] */
     public record Index(Expr base, Expr index) implements Expr {}
+
+    /** Slicing: base[start:end:step] (any component optional except first colon) */
+    public record Slice(Expr base, Expr startOpt, Expr endOpt, Expr stepOpt) implements Expr {}
 
     /** Access to a static field on an imported module/class */
     public record ModuleField(String moduleInternal, String name) implements Expr {}

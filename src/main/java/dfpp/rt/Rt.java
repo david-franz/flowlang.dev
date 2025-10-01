@@ -51,4 +51,40 @@ public final class Rt {
         }
         throw new IllegalArgumentException("indexing only supported on List in v1; got: " + (base==null?"null":base.getClass().getSimpleName()));
     }
+
+
+    public static Object slice(Object base, Object startOpt, Object endOpt, Object stepOpt) {
+        if (!(base instanceof java.util.List<?> list)) {
+            throw new IllegalArgumentException("slicing only supported on List in v1; got: " + (base==null?"null":base.getClass().getSimpleName()));
+        }
+        int n = list.size();
+        int step = (stepOpt==null) ? 1 : toInt(stepOpt);
+        if (step == 0) throw new IllegalArgumentException("slice step cannot be zero");
+        int start, end;
+        if (step > 0) {
+            start = (startOpt==null) ? 0 : toInt(startOpt);
+            end   = (endOpt==null)   ? n : toInt(endOpt);
+            if (start < 0) start = n + start;
+            if (end   < 0) end   = n + end;
+            if (start < 0) start = 0;
+            if (end < 0) end = 0;
+            if (start > n) start = n;
+            if (end > n) end = n;
+        } else {
+            start = (startOpt==null) ? (n-1) : toInt(startOpt);
+            end   = (endOpt==null)   ? -1    : toInt(endOpt);
+            if (start < 0) start = n + start;
+            if (end   < 0) end   = n + end;
+            if (start >= n) start = n-1;
+            if (end >= n) end = n-1;
+        }
+        java.util.ArrayList<Object> out = new java.util.ArrayList<>();
+        if (step > 0) {
+            for (int i = start; i < end; i += step) out.add(list.get(i));
+        } else {
+            for (int i = start; i > end; i += step) out.add(list.get(i));
+        }
+        return out;
+    }
+
 }

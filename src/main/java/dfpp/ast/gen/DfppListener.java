@@ -337,6 +337,16 @@ public interface DfppListener extends ParseTreeListener {
 	 */
 	void exitPostfixOp(DfppParser.PostfixOpContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link DfppParser#sliceSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterSliceSpec(DfppParser.SliceSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DfppParser#sliceSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitSliceSpec(DfppParser.SliceSpecContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link DfppParser#primary}.
 	 * @param ctx the parse tree
 	 */

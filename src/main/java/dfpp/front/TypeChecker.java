@@ -208,6 +208,7 @@ private final Map<String, Type> globals = new HashMap<>();
         return last;
     }
 
+    
     private Type inferExprType(Expr expr, Map<String, Type> globals, Map<String, Type> env) {
         if (expr instanceof LitInt) return new TInt();
         if (expr instanceof LitStr) return new TString();
@@ -221,27 +222,19 @@ private final Map<String, Type> globals = new HashMap<>();
         if (expr instanceof ModuleField mf) {
             String key = mf.moduleInternal() + "." + mf.name();
             Type t = globals.get(key);
-            if (t == null) {
-                // try unqualified name (imported AST merged)
-                t = globals.get(mf.name());
-            }
+            if (t == null) t = globals.get(mf.name());
             if (t == null) error("Unknown module field '" + key + "'");
             return t;
         }
         if (expr instanceof Call c) {
-            // built-in print
             if (c.callee() instanceof Var v2 && v2.name().equals("print") && c.args().size() == 1) {
                 inferExprType(c.args().get(0), globals, env);
                 return new TUnit();
             }
-            // module function call: dc2.greet(...)
             if (c.callee() instanceof ModuleField mf) {
                 String key = mf.moduleInternal() + "." + mf.name();
                 FnDecl fd = functions.get(key);
-                if (fd == null) {
-                    // fallback to unqualified
-                    fd = functions.get(mf.name());
-                }
+                if (fd == null) fd = functions.get(mf.name());
                 if (fd == null) error("Unknown function '" + key + "'");
                 if (c.args().size() != fd.params().size()) error("Function '" + mf.name() + "' called with wrong arity: expected " + fd.params().size() + ", found " + c.args().size());
                 for (int i = 0; i < c.args().size(); i++) {
@@ -249,25 +242,21 @@ private final Map<String, Type> globals = new HashMap<>();
                     Param p = fd.params().get(i);
                     if (p.type() != null) {
                         Type pt = resolveTypeRef(p.type());
-                        if (!at.equals(pt)) error("Argument " + (i+1) + " of function '" + mf.name() + "' at line " + p.line()
-                            + ": expected " + pt + " but found " + at);
+                        if (!at.equals(pt)) error("Argument " + (i+1) + " of function '" + mf.name() + "' at line " + p.line() + ": expected " + pt + " but found " + at);
                     }
                 }
                 return resolveTypeRef(fd.returnType());
             }
-            // user function call: greet(...)
             if (c.callee() instanceof Var v3) {
                 FnDecl fd = functions.get(v3.name());
                 if (fd == null) error("Unknown function '" + v3.name() + "'");
-                if (c.args().size() != fd.params().size()) error("Function '" + v3.name()
-                    + "' called with wrong arity: expected " + fd.params().size() + ", found " + c.args().size());
+                if (c.args().size() != fd.params().size()) error("Function '" + v3.name() + "' called with wrong arity: expected " + fd.params().size() + ", found " + c.args().size());
                 for (int i = 0; i < c.args().size(); i++) {
                     Type at = inferExprType(c.args().get(i), globals, env);
                     Param p = fd.params().get(i);
                     if (p.type() != null) {
                         Type pt = resolveTypeRef(p.type());
-                        if (!at.equals(pt)) error("Argument " + (i+1) + " of function '" + v3.name() + "' at line " + p.line()
-                            + ": expected " + pt + " but found " + at);
+                        if (!at.equals(pt)) error("Argument " + (i+1) + " of function '" + v3.name() + "' at line " + p.line() + ": expected " + pt + " but found " + at);
                     }
                 }
                 return resolveTypeRef(fd.returnType());
@@ -275,20 +264,13 @@ private final Map<String, Type> globals = new HashMap<>();
             error("Unsupported call expression");
         }
         if (expr instanceof Ast.RunTask rt) {
-            // ensure task exists
             if (!tasks.containsKey(rt.name())) error("Unknown task '"+rt.name()+"'");
             return new TUnit();
         }
-        if (expr instanceof Ast.Match) {
-            // Minimal v1: allow match expressions without precise typing
-            return new TUnknown();
-        }
+        if (expr instanceof Ast.Match) return new TUnknown();
         if (expr instanceof Ast.Record r) {
-            // infer a structural record type from literal
-            Map<String, Type> fts = new LinkedHashMap<>();
-            for (var e : r.fields().entrySet()) {
-                fts.put(e.getKey(), inferExprType(e.getValue(), globals, env));
-            }
+            java.util.Map<String, Type> fts = new java.util.LinkedHashMap<>();
+            for (var e : r.fields().entrySet()) fts.put(e.getKey(), inferExprType(e.getValue(), globals, env));
             return new TRecord(fts);
         }
         if (expr instanceof Ast.GetField gf) {
@@ -300,17 +282,12 @@ private final Map<String, Type> globals = new HashMap<>();
             return new TUnknown();
         }
         if (expr instanceof Ast.ListLit l) {
-            // Infer element type by unifying all elements
             Type elem = null;
             for (var ex : l.elems()) {
                 Type et = inferExprType(ex, globals, env);
-                if (elem == null || elem instanceof TUnknown) {
-                    elem = et;
-                } else if (et instanceof TUnknown) {
-                    // ignore unknowns
-                } else if (!elem.equals(et)) {
-                    error("List literal elements have mismatched types: " + elem + " vs " + et);
-                }
+                if (elem == null || elem instanceof TUnknown) elem = et;
+                else if (et instanceof TUnknown) {}
+                else if (!elem.equals(et)) error("List literal elements have mismatched types: " + elem + " vs " + et);
             }
             if (elem == null) elem = new TUnknown();
             return new TList(elem);
@@ -318,20 +295,24 @@ private final Map<String, Type> globals = new HashMap<>();
         if (expr instanceof Ast.Index idx) {
             Type bt = inferExprType(idx.base(), globals, env);
             if (bt instanceof TList tl) return tl.elem;
-            // For Map[K,V], index by key yields V (if key type matches); we only check base shape here
             if (bt instanceof TMap tm) return tm.val;
-            // If we know the base is not indexable, raise a static error
-            if (!(bt instanceof TUnknown)) {
-                error("Indexing not supported on type: " + bt);
-            }
+            if (!(bt instanceof TUnknown)) error("Indexing not supported on type: " + bt);
+            return new TUnknown();
+        }
+        if (expr instanceof Ast.Slice sl) {
+            Type bt = inferExprType(sl.base(), globals, env);
+            if (sl.startOpt()!=null) { Type st = inferExprType(sl.startOpt(), globals, env); if (!(st instanceof TInt)) error("Slice start must be Int"); }
+            if (sl.endOpt()!=null)   { Type et = inferExprType(sl.endOpt(), globals, env); if (!(et instanceof TInt)) error("Slice end must be Int"); }
+            if (sl.stepOpt()!=null)  { Type pt = inferExprType(sl.stepOpt(), globals, env); if (!(pt instanceof TInt)) error("Slice step must be Int"); }
+            if (bt instanceof TList tl) return bt;
+            if (!(bt instanceof TUnknown)) error("Slicing not supported on type: " + bt);
             return new TUnknown();
         }
         if (expr instanceof Bin b) {
             Type l = inferExprType(b.left(), globals, env);
             Type r = inferExprType(b.right(), globals, env);
             switch (b.op()) {
-                case "+": return (l instanceof TString || r instanceof TString) ? new TString()
-                                                                  : checkIntOp(l, r, b.op());
+                case "+": return (l instanceof TString || r instanceof TString) ? new TString() : checkIntOp(l, r, b.op());
                 case "-", "*", "/", "%": return checkIntOp(l, r, b.op());
                 case "==", "!=": return new TBool();
                 case "<", "<=", ">", ">=": checkIntOp(l, r, b.op()); return new TBool();
@@ -341,23 +322,16 @@ private final Map<String, Type> globals = new HashMap<>();
         }
         if (expr instanceof Un u) {
             Type t = inferExprType(u.expr(), globals, env);
-            if (u.op().equals("!")) {
-                return new TBool();
-            } else if (u.op().equals("-")) {
-                if (!(t instanceof TInt)) error("Unary '-' requires Int operand");
-                return new TInt();
-            }
+            if (u.op().equals("!")) return new TBool();
+            if (u.op().equals("-")) { if (!(t instanceof TInt)) error("Unary '-' requires Int operand"); return new TInt(); }
             error("Unsupported unary '" + u.op() + "'");
         }
         if (expr instanceof Ast.ListComp lc) {
             Type srcT = inferExprType(lc.src(), globals, env);
             Type elemT = new TUnknown();
-            if (srcT instanceof TList tl) {
-                elemT = tl.elem;
-            } else if (!(srcT instanceof TUnknown)) {
-                error("List comprehension expects a List source, got: " + srcT);
-            }
-            Map<String, Type> env2 = new HashMap<>(env);
+            if (srcT instanceof TList tl) elemT = tl.elem;
+            else if (!(srcT instanceof TUnknown)) error("List comprehension expects a List source, got: " + srcT);
+            java.util.Map<String, Type> env2 = new java.util.HashMap<>(env);
             env2.put(lc.var(), elemT);
             if (lc.guardOpt()!=null) {
                 Type gt = inferExprType(lc.guardOpt(), globals, env2);
@@ -377,7 +351,6 @@ private final Map<String, Type> globals = new HashMap<>();
         if (expr instanceof Paren p) return inferExprType(p.inner(), globals, env);
         throw new TypeException("Type checking not supported for expression: " + expr.getClass());
     }
-
     private static Type checkIntOp(Type l, Type r, String op) {
         if (!(l instanceof TInt) || !(r instanceof TInt)) error("Operator '" + op + "' requires Int operands");
         return new TInt();
@@ -415,6 +388,16 @@ private final Map<String, Type> globals = new HashMap<>();
                 error("Unsupported type: " + tref.name());
                 return new TUnknown();
         }
+        /*
+            Type bt = inferExprType(sl.base(), globals, env);
+            if (sl.startOpt()!=null) { Type st = inferExprType(sl.startOpt(), globals, env); if (!(st instanceof TInt)) error("Slice start must be Int"); }
+            if (sl.endOpt()!=null)   { Type et = inferExprType(sl.endOpt(), globals, env); if (!(et instanceof TInt)) error("Slice end must be Int"); }
+            if (sl.stepOpt()!=null)  { Type pt = inferExprType(sl.stepOpt(), globals, env); if (!(pt instanceof TInt)) error("Slice step must be Int"); }
+            if (bt instanceof TList tl) return bt; // slicing preserves list element type
+            if (!(bt instanceof TUnknown)) error("Slicing not supported on type: " + bt);
+            return new TUnknown();
+        }
+        */
     }
 
     private static void error(String msg) {

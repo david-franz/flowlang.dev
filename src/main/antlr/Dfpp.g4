@@ -166,7 +166,12 @@ postfixOp
     : LP args? RP                   // f(...) or (x)(...)
     | DOT ident                     // x.y
     | DOT ident LP args? RP         // x.y(...)
-    | LSB expr RSB                  // x[i]  (keep if you want indexing)
+    | LSB sliceSpec RSB             // x[i] or x[a:b(:c)?]
+    ;
+
+sliceSpec
+    : start=expr? COLON end=expr? (COLON step=expr)?   // slice
+    | index=expr                                       // single index
     ;
 
 // Primary expressions

@@ -249,6 +249,31 @@ Limitations in v1:
 
 Unary numeric negation is supported (e.g., `-x`, `-1`).
 
+
+### List slicing (v1)
+
+You can slice lists using `xs[start:end]` or `xs[start:end:step]` with Python-like semantics:
+
+- `start` defaults to `0` when omitted (for positive steps), or `len(xs)-1` for negative steps.
+- `end` defaults to `len(xs)` when omitted (for positive steps), or `-1` for negative steps.
+- `step` defaults to `1`. A `step` of `0` is invalid.
+- Negative indices are supported for `start`/`end`, and a negative `step` walks backwards.
+
+Examples:
+
+```text
+::df++
+fn demo(): Unit = {
+  let xs = [1,2,3,4,5]
+  print(xs[1:4])      // [2, 3, 4]
+  print(xs[:2])       // [1, 2]
+  print(xs[2:])       // [3]
+  print(xs[0:5:2])    // [1, 3, 5]
+  print(xs[-3:])      // [3, 4, 5]
+  print(xs[4:0:-2])   // [5, 3]
+}
+```
+
 ### Contracts & Static Checks
 
 ```text

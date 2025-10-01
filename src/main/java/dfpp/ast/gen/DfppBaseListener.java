@@ -412,6 +412,18 @@ public class DfppBaseListener implements DfppListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSliceSpec(DfppParser.SliceSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSliceSpec(DfppParser.SliceSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterPrimary(DfppParser.PrimaryContext ctx) { }
 	/**
 	 * {@inheritDoc}
