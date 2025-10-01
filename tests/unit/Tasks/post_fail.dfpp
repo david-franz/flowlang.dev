@@ -1,0 +1,5 @@
+module unit.tasks
+
+task 'Z' { act { } pos false }
+
+fn main() { run('Z') }

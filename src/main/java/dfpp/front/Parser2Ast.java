@@ -76,7 +76,13 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.block()!=null) {
             var blk = ctx.block();
             var stmts = new ArrayList<Ast.Stmt>();
-            for (var s : blk.stmt()) stmts.add((Ast.Stmt) visitStmt(s));
+            for (var s : blk.stmt()) {
+                Object v = visitStmt(s);
+                if (v instanceof Ast.Stmt st) stmts.add(st);
+                else if (v instanceof java.util.List<?> lst) {
+                    for (Object o : lst) stmts.add((Ast.Stmt) o);
+                }
+            }
             Ast.Expr res = null;
             if (blk.expr()!=null) {
                 res = (Ast.Expr) visitExpr(blk.expr());
@@ -97,9 +103,42 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.constDecl()!=null) return new Ast.SConst((Ast.ConstDecl) visitConstDecl(ctx.constDecl()));
         if (ctx.letDecl()!=null)   return new Ast.SLet((Ast.LetDecl) visitLetDecl(ctx.letDecl()));
         if (ctx.runStmt()!=null) {
-            var rc = ctx.runStmt().runCall();
-            String name = unquote(rc.STRING().getText());
-            return new Ast.SExpr(new Ast.RunTask(name));
+            var out = new java.util.ArrayList<Ast.Stmt>();
+            var rs = ctx.runStmt();
+            String first = unquote(rs.runCall().STRING().getText());
+            out.add(new Ast.SExpr(new Ast.RunTask(first)));
+            // Parse chained .then("...")
+            for (int i = 0; i < rs.getChildCount(); i++) {
+                var ch = rs.getChild(i);
+                if (ch instanceof dfpp.ast.gen.DfppParser.IdentContext idctx) {
+                    String method = ident(idctx);
+                    if (!method.equals("then")) throw unsupported(idctx.start, "only then(...) supported on run(...) in v1");
+                    // find next ArgsContext sibling
+                    dfpp.ast.gen.DfppParser.ArgsContext args = null;
+                    for (int j = i+1; j < rs.getChildCount(); j++) {
+                        var ch2 = rs.getChild(j);
+                        if (ch2 instanceof dfpp.ast.gen.DfppParser.ArgsContext a) { args = a; break; }
+                    }
+                    if (args == null || args.expr().size()!=1) {
+                        throw unsupported(idctx.start, "then requires a single string literal");
+                    }
+                    Object v = visitExpr(args.expr(0));
+                    if (!(v instanceof Ast.LitStr ls)) {
+                        throw unsupported(idctx.start, "then requires a single string literal");
+                    }
+                    String nm = ls.value();
+                    out.add(new Ast.SExpr(new Ast.RunTask(nm)));
+                }
+            }
+            return out;
+        }
+        if (ctx.parallelStmt()!=null) {
+            var out = new java.util.ArrayList<Ast.Stmt>();
+            var sl = ctx.parallelStmt().stringList();
+            for (var tok : sl.STRING()) {
+                out.add(new Ast.SExpr(new Ast.RunTask(unquote(tok.getText()))));
+            }
+            return out;
         }
         if (ctx.expr()!=null)      return new Ast.SExpr((Ast.Expr) visitExpr(ctx.expr()));
         throw unsupported(ctx.start, "unsupported stmt");
@@ -259,7 +298,13 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         Ast.BlockBody act;
         var blk = ctx.block();
         var stmts = new ArrayList<Ast.Stmt>();
-        for (var s : blk.stmt()) stmts.add((Ast.Stmt) visitStmt(s));
+        for (var s : blk.stmt()) {
+            Object v = visitStmt(s);
+            if (v instanceof Ast.Stmt st) stmts.add(st);
+            else if (v instanceof java.util.List<?> lst) {
+                for (Object o : lst) stmts.add((Ast.Stmt) o);
+            }
+        }
         Ast.Expr res = null;
         if (blk.expr()!=null) {
             res = (Ast.Expr) visitExpr(blk.expr());

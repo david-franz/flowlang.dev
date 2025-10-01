@@ -104,7 +104,9 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         // Tasks
         java.util.Map.entry("single_run", "A"),
         java.util.Map.entry("two_runs", "A\nB"),
-        java.util.Map.entry("pre_pos", "X")
+        java.util.Map.entry("pre_pos", "X"),
+        java.util.Map.entry("chain", "A\nB"),
+        java.util.Map.entry("parallel", "A\nB")
 );
 
     // Tests that are expected to error. The value is the expected exception simple class name
@@ -119,6 +121,7 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("map_bad_arity", "TypeException"),
         // Tasks errors
         java.util.Map.entry("unknown_task", "TypeException"),
+        java.util.Map.entry("post_fail", "InvocationTargetException"),
         java.util.Map.entry("pre_fail", "InvocationTargetException"),
         // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
         java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException")
