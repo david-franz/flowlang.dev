@@ -483,6 +483,18 @@ public interface DfppListener extends ParseTreeListener {
 	 */
 	void exitFunctionType(DfppParser.FunctionTypeContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code TupleType}
+	 * labeled alternative in {@link DfppParser#typeRef}.
+	 * @param ctx the parse tree
+	 */
+	void enterTupleType(DfppParser.TupleTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code TupleType}
+	 * labeled alternative in {@link DfppParser#typeRef}.
+	 * @param ctx the parse tree
+	 */
+	void exitTupleType(DfppParser.TupleTypeContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link DfppParser#typeArgs}.
 	 * @param ctx the parse tree
 	 */

@@ -153,6 +153,7 @@ multiplicative
 
 unary
     : NOT unary
+    | MINUS unary
     | postfix
     ;
 
@@ -232,7 +233,8 @@ recField
     ;
 
 arrayLit
-    : LSB (expr (COMMA expr)*)? RSB
+    : LSB expr FOR ident IN expr (IF expr)? RSB        // list comprehension
+    | LSB (expr (COMMA expr)*)? RSB                    // list literal
     ;
 
 // ---------------- Types ----------------
@@ -243,6 +245,7 @@ arrayLit
 typeRef
     : qid typeArgs?                               #NamedOrAppliedType
     | LB typeField (COMMA typeField)* RB          #RecordType
+    | LP typeRef (COMMA typeRef)+ RP              #TupleType
     | typeRef ARROW typeRef                       #FunctionType
     ;
 
@@ -289,6 +292,9 @@ MUT         : 'mut';
 TRUE        : 'true';
 FALSE       : 'false';
 NULL        : 'null';
+FOR         : 'for';
+IN          : 'in';
+IF          : 'if';
 
 // Put UNDERSCORE before ID so "_" is a wildcard token, but "_x" still matches ID.
 UNDERSCORE  : '_' ;

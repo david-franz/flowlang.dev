@@ -26,7 +26,7 @@ public final class TypeChecker {
     }
 
     // Type representation (structural). Keep equals/hashCode semantics for comparisons.
-    private sealed interface Type permits TInt, TString, TBool, TUnit, TUnknown, TList, TSet, TMap, TRecord {}
+    private sealed interface Type permits TInt, TString, TBool, TUnit, TUnknown, TList, TSet, TMap, TRecord, TTuple {}
     private static final class TInt implements Type { @Override public boolean equals(Object o){return o instanceof TInt;} @Override public int hashCode(){return 1;} @Override public String toString(){return "Int";} }
     private static final class TString implements Type { @Override public boolean equals(Object o){return o instanceof TString;} @Override public int hashCode(){return 2;} @Override public String toString(){return "String";} }
     private static final class TBool implements Type { @Override public boolean equals(Object o){return o instanceof TBool;} @Override public int hashCode(){return 3;} @Override public String toString(){return "Bool";} }
@@ -61,7 +61,15 @@ public final class TypeChecker {
         @Override public String toString(){ return "{" + String.join(", ", fields.entrySet().stream().map(e -> e.getKey()+": "+e.getValue()).toList()) + "}"; }
     }
 
-    private final Map<String, Type> globals = new HashMap<>();
+    
+    private static final class TTuple implements Type {
+        final java.util.List<Type> elems;
+        TTuple(java.util.List<Type> elems){ this.elems = java.util.List.copyOf(elems); }
+        @Override public boolean equals(Object o){ return (o instanceof TTuple t) && java.util.Objects.equals(elems, t.elems); }
+        @Override public int hashCode(){ return java.util.Objects.hash(elems); }
+        @Override public String toString(){ return "(" + String.join(", ", elems.stream().map(Object::toString).toList()) + ")"; }
+    }
+private final Map<String, Type> globals = new HashMap<>();
     private final Map<String, FnDecl> functions = new HashMap<>();
     private final Map<String, Ast.TaskDecl> tasks = new HashMap<>();
 
@@ -333,8 +341,30 @@ public final class TypeChecker {
         }
         if (expr instanceof Un u) {
             Type t = inferExprType(u.expr(), globals, env);
-            if (!u.op().equals("!")) error("Unsupported unary '" + u.op() + "'");
-            return new TBool();
+            if (u.op().equals("!")) {
+                return new TBool();
+            } else if (u.op().equals("-")) {
+                if (!(t instanceof TInt)) error("Unary '-' requires Int operand");
+                return new TInt();
+            }
+            error("Unsupported unary '" + u.op() + "'");
+        }
+        if (expr instanceof Ast.ListComp lc) {
+            Type srcT = inferExprType(lc.src(), globals, env);
+            Type elemT = new TUnknown();
+            if (srcT instanceof TList tl) {
+                elemT = tl.elem;
+            } else if (!(srcT instanceof TUnknown)) {
+                error("List comprehension expects a List source, got: " + srcT);
+            }
+            Map<String, Type> env2 = new HashMap<>(env);
+            env2.put(lc.var(), elemT);
+            if (lc.guardOpt()!=null) {
+                Type gt = inferExprType(lc.guardOpt(), globals, env2);
+                if (!(gt instanceof TBool)) error("List comprehension guard must be Bool");
+            }
+            Type outElem = inferExprType(lc.elem(), globals, env2);
+            return new TList(outElem);
         }
         if (expr instanceof Ternary t) {
             Type c = inferExprType(t.cond(), globals, env);
@@ -364,6 +394,11 @@ public final class TypeChecker {
             case "String": return new TString();
             case "Bool": return new TBool();
             case "Unit": return new TUnit();
+            case "Tuple": {
+                var elems = new java.util.ArrayList<Type>();
+                for (var arg : tref.args()) elems.add(resolveTypeRef(arg));
+                return new TTuple(elems);
+            }
             case "List": {
                 if (tref.args()==null || tref.args().size()!=1) error("List<T> requires exactly one type argument");
                 return new TList(resolveTypeRef(tref.args().get(0)));
@@ -391,6 +426,15 @@ public final class TypeChecker {
         if (t instanceof TString) return new TypeRef("String", List.of());
         if (t instanceof TBool) return new TypeRef("Bool", List.of());
         if (t instanceof TUnit) return new TypeRef("Unit", List.of());
+        if (t instanceof TTuple tt) {
+            var args = new java.util.ArrayList<TypeRef>();
+            for (var e : tt.elems) {
+                var tr = toTypeRefOrNull(e);
+                if (tr == null) return null;
+                args.add(tr);
+            }
+            return new TypeRef("Tuple", args);
+        }
         if (t instanceof TList tl) {
             TypeRef inner = toTypeRefOrNull(tl.elem);
             if (inner == null) return null;

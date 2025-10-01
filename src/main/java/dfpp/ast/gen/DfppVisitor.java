@@ -295,6 +295,13 @@ public interface DfppVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFunctionType(DfppParser.FunctionTypeContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code TupleType}
+	 * labeled alternative in {@link DfppParser#typeRef}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTupleType(DfppParser.TupleTypeContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link DfppParser#typeArgs}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

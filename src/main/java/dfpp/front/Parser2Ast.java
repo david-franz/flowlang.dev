@@ -165,6 +165,16 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         return new TypeRef(name, args);
     }
 
+    @Override
+    public Object visitTupleType(DfppParser.TupleTypeContext ctx) {
+        var args = new java.util.ArrayList<TypeRef>();
+        for (var tr : ctx.typeRef()) {
+            args.add((TypeRef) visit(tr));
+        }
+        return new TypeRef("Tuple", args);
+    }
+
+
     public Object visitExpr(DfppParser.ExprContext ctx) {
         return visit(ctx.conditional());
     }
@@ -233,6 +243,10 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
 
     public Object visitUnary(DfppParser.UnaryContext ctx) {
         if (ctx.NOT()!=null) return new Ast.Un("!", (Ast.Expr) visit(ctx.unary()));
+        // Support unary minus: -expr
+        if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("-")) {
+            return new Ast.Un("-", (Ast.Expr) visit(ctx.unary()));
+        }
         return visit(ctx.postfix());
     }
 
@@ -373,6 +387,54 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
     }
 
     public Object visitArrayLit(DfppParser.ArrayLitContext ctx) {
+        // Detect comprehension form: [ expr for x in expr (if expr)? ]
+        boolean hasFor = false;
+        String varName = null;
+        int inExprIdx = -1; // index in ctx.expr() of source expr
+        int guardExprIdx = -1;
+        for (int i = 0; i < ctx.getChildCount(); i++) {
+            var ch = ctx.getChild(i);
+            String txt = ch.getText();
+            if (txt != null && txt.equals("for")) {
+                hasFor = true;
+                // next ident child is the variable name
+                for (int j = i+1; j < ctx.getChildCount(); j++) {
+                    var ch2 = ctx.getChild(j);
+                    if (ch2 instanceof dfpp.ast.gen.DfppParser.IdentContext id2) {
+                        varName = id2.getText().replace("`", "");
+                        break;
+                    }
+                }
+            }
+            if (txt != null && txt.equals("in")) {
+                // the next expr() is the source
+                int seenExpr = 0;
+                for (int j = 0; j < ctx.getChildCount(); j++) {
+                    if (ctx.getChild(j) instanceof dfpp.ast.gen.DfppParser.ExprContext) {
+                        if (j > i) { inExprIdx = seenExpr; break; }
+                        seenExpr++;
+                    }
+                }
+            }
+            if (txt != null && txt.equals("if")) {
+                int seenExpr = 0;
+                for (int j = 0; j < ctx.getChildCount(); j++) {
+                    if (ctx.getChild(j) instanceof dfpp.ast.gen.DfppParser.ExprContext) {
+                        if (j > i) { guardExprIdx = seenExpr; break; }
+                        seenExpr++;
+                    }
+                }
+            }
+        }
+        if (hasFor && varName != null && inExprIdx >= 0) {
+            Ast.Expr mapExpr = (Ast.Expr) visitExpr(ctx.expr(0));
+            Ast.Expr srcExpr = (Ast.Expr) visitExpr(ctx.expr(inExprIdx));
+            Ast.Expr guardExpr = guardExprIdx >= 0 && guardExprIdx < ctx.expr().size()
+                    ? (Ast.Expr) visitExpr(ctx.expr(guardExprIdx))
+                    : null;
+            return new Ast.ListComp(mapExpr, varName, srcExpr, guardExpr);
+        }
+        // Fallback: normal list literal
         var list = new java.util.ArrayList<Ast.Expr>();
         for (var ectx : ctx.expr()) {
             list.add((Ast.Expr) visitExpr(ectx));

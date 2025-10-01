@@ -158,7 +158,13 @@ public final class CodeGen {
             case Ast.Paren p -> genExpr(mv, p.inner(), env, depth+1);
             case Ast.Un un -> {
                 genExpr(mv, un.expr(), env, depth+1);
-                mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "not", "(Ljava/lang/Object;)Ljava/lang/Boolean;", false);
+                if (un.op().equals("!")) {
+                    mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "not", "(Ljava/lang/Object;)Ljava/lang/Boolean;", false);
+                } else if (un.op().equals("-")) {
+                    mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "neg", "(Ljava/lang/Object;)Ljava/lang/Object;", false);
+                } else {
+                    throw new RuntimeException("unsupported unary op: "+un.op());
+                }
             }
             case Ast.Bin b -> {
                 // short-circuit && and ||
@@ -223,6 +229,72 @@ public final class CodeGen {
                     mv.visitInsn(POP);
                 }
             }
+            case Ast.ListComp lc -> {
+                // result list
+                mv.visitTypeInsn(NEW, "java/util/ArrayList");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
+                int resSlot = nextLocal++;
+                mv.visitVarInsn(ASTORE, resSlot);
+                // source list
+                genExpr(mv, lc.src(), env, depth+1);
+                int srcSlot = nextLocal++;
+                mv.visitVarInsn(ASTORE, srcSlot);
+                // i = 0
+                int iSlot = nextLocal++;
+                pushInt(mv, 0);
+                mv.visitVarInsn(ISTORE, iSlot);
+                Label loopStart = new Label();
+                Label loopEnd = new Label();
+                mv.visitLabel(loopStart);
+                // if (i < ((List)src).size())
+                mv.visitVarInsn(ALOAD, srcSlot);
+                mv.visitTypeInsn(CHECKCAST, "java/util/List");
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I", true);
+                mv.visitVarInsn(ILOAD, iSlot);
+                mv.visitJumpInsn(IF_ICMPLE, loopEnd); // if size <= i -> end
+                // elem = ((List)src).get(i)
+                mv.visitVarInsn(ALOAD, srcSlot);
+                mv.visitTypeInsn(CHECKCAST, "java/util/List");
+                mv.visitVarInsn(ILOAD, iSlot);
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "get", "(I)Ljava/lang/Object;", true);
+                // bind to var
+                int varSlot;
+                Integer existing = env.get(lc.var());
+                if (existing != null) {
+                    varSlot = existing;
+                } else {
+                    varSlot = nextLocal++;
+                    env = new java.util.HashMap<>(env);
+                    env.put(lc.var(), varSlot);
+                }
+                mv.visitVarInsn(ASTORE, varSlot);
+                // if guard present, evaluate and branch
+                if (lc.guardOpt() != null) {
+                    genExpr(mv, lc.guardOpt(), env, depth+1);
+                    mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toBool", "(Ljava/lang/Object;)Z", false);
+                    Label skipAdd = new Label();
+                    mv.visitJumpInsn(IFEQ, skipAdd);
+                    // add mapped element
+                    mv.visitVarInsn(ALOAD, resSlot);
+                    genExpr(mv, lc.elem(), env, depth+1);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z", false);
+                    mv.visitInsn(POP);
+                    mv.visitLabel(skipAdd);
+                } else {
+                    mv.visitVarInsn(ALOAD, resSlot);
+                    genExpr(mv, lc.elem(), env, depth+1);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z", false);
+                    mv.visitInsn(POP);
+                }
+                // i++
+                mv.visitIincInsn(iSlot, 1);
+                mv.visitJumpInsn(GOTO, loopStart);
+                mv.visitLabel(loopEnd);
+                // load result
+                mv.visitVarInsn(ALOAD, resSlot);
+            }
+
             case Ast.Index idx -> {
                 genExpr(mv, idx.base(), env, depth+1);
                 genExpr(mv, idx.index(), env, depth+1);

@@ -26,6 +26,7 @@ public final class Rt {
     public static Boolean ne(Object a, Object b) { return !eq(a,b); }
 
     public static Boolean not(Object a)          { return !toBool(a); }
+    public static Object neg(Object a)           { return Integer.valueOf(-toInt(a)); }
 
     public static boolean toBool(Object a) {
         if (a instanceof Boolean b) return b;
