@@ -11,6 +11,33 @@
 ./gradlew run --args="examples/hello.dfpp demo.hello"
 ```
 
+## Current status (v1 POC)
+
+This repo contains a working proof-of-concept compiler and runtime for a minimal v1 subset. Implemented today:
+
+- Frontend
+  - ANTLR4 grammar and parser → AST (Java records)
+  - Minimal type checker for primitives (Int, String, Bool, Unit). Checks const/let, function parameter types (when declared), basic return type consistency. Partial inference for return types within tests.
+- Codegen/runtime
+  - ASM bytecode emitter, single class per compiled unit, static fields for top-level values
+  - Expressions: arithmetic (+ - * / %), comparisons (== != < <= > >=), boolean (! && || with short-circuit), ternary (cond ? a : b), parentheses
+  - Data: list literals + indexing; record literals + field access (stored as Map)
+  - Functions: definitions and calls, multiple parameters, built-in print(x)
+  - Modules/imports: imported df++ modules are merged into the current compilation unit; module-qualified names (Alias.x, Alias.f(...)) resolve to the current class
+  - Minimal runtime helpers (dfpp.rt.Rt) for numeric ops, comparisons, truthiness, string concatenation
+- Tests
+  - Unit tests live under tests/unit/<Category>
+  - JUnit harness compiles and runs df++ files, compares stdout to inline EXPECTED values, aggregates results, and writes build/dfpp-tests.txt
+  - You can enable categories or individual tests in src/test/java/dfpp/DfppFeatureTests.java via INCLUDE_DIRS and INCLUDE
+  - Some tests assert failures (e.g., missing param types, return mismatch) via EXPECTED_ERROR and are considered passing when the expected exception is thrown
+
+Known limitations (intentional for now):
+
+- Pattern matching: literals + wildcard only (no records/variants yet)
+- No tasks/orchestration/contracts/solver; stdlib is minimal; dfVM/fixtures/quotas not wired
+- Type checker is intentionally lightweight; parameter types are required (tests include negative cases). Cross-module return inference works in a permissive mode
+- No separate module classes; imports are merged into a single class for minimal v1
+
 ---
 
 ## Table of Contents
@@ -486,6 +513,22 @@ Suggested steps (Gradle example):
 ```
 
 > Maven builds would mirror these tasks; concrete scripts will be added during implementation.
+
+
+## Running tests (POC)
+
+- Tests live under tests/unit/<Category>
+- Enable categories or individual tests in src/test/java/dfpp/DfppFeatureTests.java:
+  - INCLUDE_DIRS = List.of("Expression", "Data", "Pattern", "Functions", "Modules", "Types")
+  - INCLUDE = List.of("add", "rec_get", ...)
+- Run all enabled tests:
+
+```bash
+./gradlew test
+```
+
+- The harness aggregates results and writes a log to build/dfpp-tests.txt. Some tests are expected to fail with specific exceptions (e.g., TypeException); these are marked in EXPECTED_ERROR and considered passing when the expected error occurs.
+
 
 ---
 
