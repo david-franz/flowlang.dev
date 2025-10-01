@@ -38,4 +38,16 @@ public final class Rt {
         if (a instanceof Boolean b) return b ? 1 : 0;
         throw new IllegalArgumentException("not an int: " + a);
     }
+
+    // Python-like indexing for lists: supports negative indices.
+    public static Object index(Object base, Object idx) {
+        if (base instanceof java.util.List<?> list) {
+            int i = toInt(idx);
+            int n = list.size();
+            if (i < 0) i = n + i; // negative from end
+            if (i < 0 || i >= n) throw new IndexOutOfBoundsException("list index out of range: " + i);
+            return list.get(i);
+        }
+        throw new IllegalArgumentException("indexing only supported on List in v1: " + base);
+    }
 }

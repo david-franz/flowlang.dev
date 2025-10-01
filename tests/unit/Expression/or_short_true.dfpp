@@ -1,0 +1,5 @@
+module unit.expr
+fn main() {
+  true || print("X")
+  print("ok")
+}

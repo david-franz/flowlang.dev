@@ -1,0 +1,3 @@
+module unit.mod
+import not.exists as NE
+fn main() { print(0) }

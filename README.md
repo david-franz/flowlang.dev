@@ -36,6 +36,7 @@ This repo contains a working proof-of-concept compiler and runtime for a minimal
   - ASM bytecode emitter, single class per compiled unit, static fields for top-level values
   - Expressions: arithmetic (+ - * / %), comparisons (== != < <= > >=), boolean (! && || with short-circuit), ternary (cond ? a : b), parentheses
   - Data: list literals + indexing (with verifier-safe nested indexing); record literals + field access (stored as Map)
+  - Indexing: negative indices on List (Python-style) are supported: xs[0-1] selects the last element. Full slice syntax (xs[a:b:c]) is planned and will require a grammar update.
   - Functions: definitions and calls, multiple parameters, built-in print(x)
   - Modules/imports: imported df++ modules are merged into the current compilation unit; module-qualified names (Alias.x, Alias.f(...)) resolve to the current class
   - Minimal runtime helpers (dfpp.rt.Rt) for numeric ops, comparisons, truthiness, string concatenation
@@ -58,6 +59,8 @@ This repo contains a working proof-of-concept compiler and runtime for a minimal
   - Nested list indexing is verifier‑safe (CHECKCAST ArrayList before get)
 - Tests
   - New Collections test suite; moved list tests under Collections; added nested collections positive/negative tests
+  - New Tasks test suite: run('...'), chaining via then, and parallel {...} (sequential in v1)
+  - Expression short-circuit tests (&&, ||); Data tests for missing fields, list OOB, and negative indices
 
 Known limitations (intentional for now):
 

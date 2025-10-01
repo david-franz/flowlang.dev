@@ -80,6 +80,11 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         // Modules
         java.util.Map.entry("lib_const", "9"),
         java.util.Map.entry("use_const", "9"),
+        java.util.Map.entry("match_null_default", "null"),
+        java.util.Map.entry("and_short_false", "ok"),
+        java.util.Map.entry("or_short_true", "ok"),
+        java.util.Map.entry("rec_missing_field", "null"),
+        java.util.Map.entry("list_neg_idx", "2"),
         java.util.Map.entry("infer_cross_fn_use", "42"),
         // Types
         java.util.Map.entry("add_typed", "5"),
@@ -129,7 +134,15 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("chain_non_literal", "RuntimeException"),
         java.util.Map.entry("lib_tasks", "NoSuchMethodException"),
         java.util.Map.entry("pre_fail", "InvocationTargetException"),
-        // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
+        java.util.Map.entry("list_oob", "InvocationTargetException"),
+                java.util.Map.entry("idx_not_list", "InvocationTargetException"),
+                java.util.Map.entry("tern_bad_cond", "TypeException"),
+                java.util.Map.entry("arity_mismatch", "RuntimeException"),
+                java.util.Map.entry("call_unknown_fn", "RuntimeException"),
+                java.util.Map.entry("missing_import", "RuntimeException"),
+                java.util.Map.entry("const_mismatch", "TypeException"),
+                java.util.Map.entry("let_mismatch", "TypeException"),
+                // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
         java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException")
     );
 

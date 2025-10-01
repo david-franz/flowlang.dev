@@ -1,0 +1,6 @@
+module unit.data
+fn main() {
+  let xs = [1,2]
+  // unary minus isn't in the grammar yet; use an arithmetic expr to produce -1
+  print(xs[0-1])
+}

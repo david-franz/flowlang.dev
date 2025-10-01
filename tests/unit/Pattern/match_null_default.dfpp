@@ -1,0 +1,5 @@
+module unit.pattern
+fn main() {
+  let v = match (1) { 2 -> "x" }
+  print(v)
+}

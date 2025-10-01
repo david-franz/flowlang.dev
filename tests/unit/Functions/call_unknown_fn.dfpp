@@ -1,0 +1,2 @@
+module unit.fn
+fn main() { foo() }
