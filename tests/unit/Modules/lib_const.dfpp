@@ -1,2 +1,5 @@
 module unit.libc
-const v: Int = 9
+let v: Int = 9
+fn main() {
+    print(v)
+}

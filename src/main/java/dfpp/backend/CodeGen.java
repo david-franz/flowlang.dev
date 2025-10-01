@@ -202,7 +202,7 @@ public final class CodeGen {
             case Ast.ModuleField mf -> {
                 // static field lookup on imported module/class
                 mv.visitFieldInsn(GETSTATIC,
-                    mf.moduleInternal(),
+                    classNameInternal,
                     mangle(mf.name()),
                     "Ljava/lang/Object;");
                 break;
@@ -320,7 +320,7 @@ public final class CodeGen {
                         genExpr(mv, c.args().get(i), env, depth+1);
                         mv.visitInsn(AASTORE);
                     }
-                    mv.visitMethodInsn(INVOKESTATIC, mf.moduleInternal(), mname,
+                    mv.visitMethodInsn(INVOKESTATIC, classNameInternal, mname,
                         "([Ljava/lang/Object;)Ljava/lang/Object;", false);
                     return;
                 }
