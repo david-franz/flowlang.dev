@@ -61,6 +61,12 @@ This repo contains a working proof-of-concept compiler and runtime for a minimal
   - New Collections test suite; moved list tests under Collections; added nested collections positive/negative tests
   - New Tasks test suite: run('...'), chaining via then, and parallel {...} (sequential in v1)
   - Expression short-circuit tests (&&, ||); Data tests for missing fields, list OOB, and negative indices
+  - Functions: added error-path tests (unknown fn, arity mismatch)
+
+- Errors & diagnostics
+  - Static: indexing non-indexable values now fails at compile-time (clear type error)
+  - Calls: wrong-arity messages now include expected/found counts
+  - Runtime: list index OOB message includes the offending index and size; non-list indexing reports the actual type
 
 Known limitations (intentional for now):
 
