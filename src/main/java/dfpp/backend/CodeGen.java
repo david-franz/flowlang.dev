@@ -190,6 +190,23 @@ public final class CodeGen {
                     default   -> throw new RuntimeException("op not supported: "+b.op());
                 }
             }
+            case Ast.ListLit l -> {
+                mv.visitTypeInsn(NEW, "java/util/ArrayList");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
+                for (var elem : l.elems()) {
+                    mv.visitInsn(DUP);
+                    genExpr(mv, elem, env, depth+1);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z", false);
+                    mv.visitInsn(POP);
+                }
+            }
+            case Ast.Index idx -> {
+                genExpr(mv, idx.base(), env, depth+1);
+                genExpr(mv, idx.index(), env, depth+1);
+                mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toInt", "(Ljava/lang/Object;)I", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "get", "(I)Ljava/lang/Object;", false);
+            }
             case Ast.Match m -> {
                 // pattern matching on literals and wildcard (minimal v1)
                 Label end = new Label();

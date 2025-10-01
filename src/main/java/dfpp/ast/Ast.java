@@ -24,7 +24,7 @@ public final class Ast {
     public record SExpr(Expr e) implements Stmt {}
 
     // Expressions (subset)
-public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField {}
+public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField, ListLit, Index {}
 
     public record LitInt(int value) implements Expr {}
     public record LitStr(String value) implements Expr {}
@@ -54,4 +54,10 @@ public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un
 
     /** Field access: base.field */
     public record GetField(Expr base, String name) implements Expr {}
+
+    /** List literal: [e1, e2, ...] */
+    public record ListLit(java.util.List<Expr> elems) implements Expr {}
+
+    /** Indexing: base[index] */
+    public record Index(Expr base, Expr index) implements Expr {}
 }

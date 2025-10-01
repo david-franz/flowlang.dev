@@ -165,7 +165,8 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
                 // method call not supported in minimal v1
                 throw unsupported(op.DOT().getSymbol(), "method call not supported in minimal v1");
             } else if (op.LSB()!=null) {
-                throw unsupported(op.LSB().getSymbol(), "indexing not supported in minimal v1");
+                Ast.Expr idx = (Ast.Expr) visitExpr(op.expr());
+                base = new Ast.Index(base, idx);
             }
         }
         return base;
@@ -176,8 +177,9 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.expr()!=null)    return new Ast.Paren((Ast.Expr) visitExpr(ctx.expr()));
         if (ctx.matchExpr()!=null) return visitMatchExpr(ctx.matchExpr());
         if (ctx.recordLit()!=null) return visitRecordLit(ctx.recordLit());
-        if (ctx.ident()!=null)   return new Ast.Var(ident(ctx.ident()));
-        if (ctx.arrayLit()!=null || ctx.runCall()!=null || ctx.lambdaExpr()!=null)
+        if (ctx.arrayLit()!=null)  return visitArrayLit(ctx.arrayLit());
+        if (ctx.ident()!=null)     return new Ast.Var(ident(ctx.ident()));
+        if (ctx.runCall()!=null || ctx.lambdaExpr()!=null)
             throw unsupported(ctx.start, "construct not supported in minimal v1");
         return null;
     }
@@ -223,6 +225,14 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
             map.put(name, val);
         }
         return new Ast.Record(map);
+    }
+
+    public Object visitArrayLit(DfppParser.ArrayLitContext ctx) {
+        var list = new java.util.ArrayList<Ast.Expr>();
+        for (var ectx : ctx.expr()) {
+            list.add((Ast.Expr) visitExpr(ectx));
+        }
+        return new Ast.ListLit(list);
     }
 
     private static String ident(DfppParser.IdentContext id) {
