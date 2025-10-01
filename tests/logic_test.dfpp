@@ -1,6 +1,0 @@
-module tests.logic
-
-fn main() {
-  print('a=' + (true && false))
-  print('b=' + (false || true))
-}

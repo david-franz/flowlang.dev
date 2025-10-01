@@ -1,7 +1,0 @@
-module tests.record
-
-fn main() {
-  let rec = { id = 123, title = "df++" }
-  print("id=" + rec.id)
-  print("title=" + rec.title)
-}

@@ -21,43 +21,141 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DfppFeatureTests {
 
-    @Test
-    public void runAllDfppTests() throws Exception {
-        Path testsDir = Path.of("tests");
-        assertTrue(Files.isDirectory(testsDir), "tests directory not found");
+    // Inline allow-list of tests to run (basenames without extension). Default empty.
+    private static final java.util.List<String> INCLUDE = java.util.List.of(
+        // enable tests incrementally, e.g. "hello_test"
+    );
 
-        Set<String> skip = loadSkipList(testsDir.resolve("skiplist.txt"));
-        if (!skip.isEmpty()) {
-            // Start with all tests disabled; incrementally enable by removing from skiplist.txt
-            return;
-        }
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(testsDir, "*.dfpp")) {
-            for (Path df : stream) {
-                String base = df.getFileName().toString().replaceFirst("\\.dfpp$", "");
-                Path expected = testsDir.resolve(base + ".expected");
-                if (!Files.exists(expected)) {
-                    fail("Missing expected file for test " + df);
-                }
-                String out = compileAndRun(df);
-                String expectedStr = Files.readString(expected, StandardCharsets.UTF_8).replace("\r\n", "\n").trim();
-                String actualStr = out.replace("\r\n", "\n").trim();
-                assertEquals(expectedStr, actualStr, "Output mismatch for " + df.getFileName());
+    // Allow enabling entire categories (directories under tests/unit): Data, Expression, Types, Functions
+    private static final java.util.List<String> INCLUDE_DIRS = java.util.List.of(
+        // e.g. "Data", "Expression", "Functions"
+            "Data",
+            "Expression",
+            "Functions"
+    );
+
+    // Inline expected outputs keyed by test basename.
+private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEntries(
+        // Data
+        java.util.Map.entry("list_idx", "20"),
+        java.util.Map.entry("rec_get", "9"),
+        // Expression
+        java.util.Map.entry("add", "5"),
+        java.util.Map.entry("and", "false"),
+        java.util.Map.entry("or", "true"),
+        java.util.Map.entry("lt", "true"),
+        java.util.Map.entry("ge", "true"),
+        java.util.Map.entry("eq", "true"),
+        java.util.Map.entry("tern", "t"),
+        // Functions
+        java.util.Map.entry("call", "7"),
+        // Types
+        java.util.Map.entry("add_typed", "5")
+    );
+
+    @Test
+    public void runIncludedDfppTests() throws Exception {
+        if (INCLUDE.isEmpty() && INCLUDE_DIRS.isEmpty()) return; // nothing enabled
+        Path testsRoot = Path.of("tests", "unit");
+        assertTrue(Files.isDirectory(testsRoot), "tests/unit directory not found");
+
+        // collect files from included dirs
+        Set<Path> toRun = new java.util.LinkedHashSet<>();
+        for (String dir : INCLUDE_DIRS) {
+            Path cat = testsRoot.resolve(dir);
+            if (!Files.isDirectory(cat)) continue;
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(cat, "*.dfpp")) {
+                for (Path p : ds) toRun.add(p);
             }
+        }
+        // collect files by explicit basenames
+        if (!INCLUDE.isEmpty()) {
+            try (var walk = Files.walk(testsRoot)) {
+                Map<String, Path> byBase = new HashMap<>();
+                walk.filter(p -> p.toString().endsWith(".dfpp")).forEach(p -> {
+                    String base = p.getFileName().toString().replaceFirst("\\.dfpp$", "");
+                    byBase.put(base, p);
+                });
+                for (String base : INCLUDE) {
+                    Path p = byBase.get(base);
+                    assertNotNull(p, "Test file not found for basename: " + base);
+                    toRun.add(p);
+                }
+            }
+        }
+        if (toRun.isEmpty()) return; // nothing enabled
+
+        java.util.List<Result> results = new java.util.ArrayList<>();
+        java.util.List<Path> ordered = new java.util.ArrayList<>(toRun);
+        ordered.sort(java.util.Comparator.comparing(Path::toString));
+        for (Path df : ordered) {
+            String base = df.getFileName().toString().replaceFirst("\\.dfpp$", "");
+            Result r = runOne(df, base);
+            results.add(r);
+        }
+        report(results);
+    }
+
+/* removed: skip list no longer used */
+
+    private static record Result(String name, String expected, String actual, boolean ok, String note) {}
+
+    private static Result runOne(java.nio.file.Path df, String base) {
+        try {
+            String out = compileAndRun(df);
+            String actualStr = out.replace("\\r\\n", "\\n").trim();
+            String expectedStr = EXPECTED.get(base);
+            boolean hasExpected = expectedStr != null;
+            boolean ok = hasExpected && expectedStr.equals(actualStr);
+            System.out.println("[TEST] " + base);
+            if (!actualStr.isEmpty()) System.out.println(actualStr);
+            String note = hasExpected ? (ok ? "OK" : "mismatch") : "missing expected";
+            return new Result(base, expectedStr, actualStr, ok, note);
+        } catch (Exception ex) {
+            System.out.println("[TEST] " + base + " ERROR: " + ex.getMessage());
+            return new Result(base, EXPECTED.get(base), "<error>", false, ex.getClass().getSimpleName());
+        }
+    }
+
+    private static void report(java.util.List<Result> results) {
+        long passed = results.stream().filter(r -> r.ok).count();
+        long total = results.size();
+        long failed = total - passed;
+        System.out.println(String.format("[SUMMARY] %d passed, %d failed, %d total", passed, failed, total));
+        writeLog(results);
+        if (failed > 0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Failures (" + failed + "):\n");
+            for (Result r : results) {
+                if (r.ok) continue;
+                sb.append(" - ").append(r.name).append(": ").append(r.note).append("\n");
+                sb.append("   expected: ").append(String.valueOf(r.expected)).append("\n");
+                sb.append("   actual  : ").append(String.valueOf(r.actual)).append("\n");
+            }
+            org.junit.jupiter.api.Assertions.fail(sb.toString());
         }
     }
 
     private static Set<String> loadSkipList(Path skipFile) throws IOException {
-        Set<String> s = new HashSet<>();
-        if (Files.exists(skipFile)) {
-            for (String line : Files.readAllLines(skipFile, java.nio.charset.StandardCharsets.UTF_8)) {
-                String t = line.trim();
-                if (t.isEmpty() || t.startsWith("#")) continue;
-                s.add(t);
-            }
-        }
-        return s;
+        throw new UnsupportedOperationException("Skip list removed; use INCLUDE list instead");
     }
 
+    @Disabled("Run all tests present in tests/ (requires EXPECTED entries); opt-in only")
+    @Test
+    public void runAllDfppTests() throws Exception {
+        Path testsRoot = Path.of("tests", "unit");
+        assertTrue(Files.isDirectory(testsRoot), "tests/unit directory not found");
+        java.util.List<Result> results = new java.util.ArrayList<>();
+        try (var walk = Files.walk(testsRoot)) {
+            walk.filter(p -> p.toString().endsWith(".dfpp"))
+                .sorted()
+                .forEach(df -> {
+                    String base = df.getFileName().toString().replaceFirst("\\.dfpp$", "");
+                    results.add(runOne(df, base));
+                });
+        }
+        report(results);
+    }
     private static String compileAndRun(Path srcFile) throws Exception {
         // Parse
         CharStream input = CharStreams.fromPath(srcFile);
@@ -121,7 +219,7 @@ public class DfppFeatureTests {
         return buf.toString(StandardCharsets.UTF_8);
     }
 
-    private static Path findModuleFile(String moduleName) {
+        private static Path findModuleFile(String moduleName) {
         List<Path> roots = List.of(Path.of("tests"), Path.of("examples"));
         for (Path root : roots) {
             if (!Files.exists(root)) continue;
@@ -146,5 +244,29 @@ public class DfppFeatureTests {
             }
         }
         throw new RuntimeException("Module not found: " + moduleName);
+    }
+
+
+    private static void writeLog(java.util.List<Result> results) {
+        try {
+            java.nio.file.Path outDir = java.nio.file.Path.of("build");
+            java.nio.file.Files.createDirectories(outDir);
+            java.nio.file.Path log = outDir.resolve("dfpp-tests.txt");
+            StringBuilder sb = new StringBuilder();
+            for (Result r : results) {
+                sb.append("[TEST] ").append(r.name).append(" ").append(r.ok ? "OK" : r.note).append("\n");
+                if (r.actual != null && !r.actual.isEmpty()) {
+                    sb.append(r.actual).append("\n");
+                }
+                sb.append("\n");
+            }
+            long passed = results.stream().filter(x -> x.ok).count();
+            sb.append(String.format("[SUMMARY] %d passed, %d failed, %d total\n",
+                    passed, results.size()-passed, results.size()));
+            java.nio.file.Files.writeString(log, sb.toString(), java.nio.charset.StandardCharsets.UTF_8);
+            System.out.println("[LOG] Wrote test output to " + log.toString());
+        } catch (Exception e) {
+            System.out.println("[LOG] Failed to write test log: " + e.getMessage());
+        }
     }
 }

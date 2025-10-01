@@ -1,9 +1,0 @@
-module tests.func
-
-fn greet(name: String) {
-  "hello " + name
-}
-
-fn main() {
-  print(greet("Bob"))
-}

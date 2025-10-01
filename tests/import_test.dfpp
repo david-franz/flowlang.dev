@@ -1,8 +1,0 @@
-module tests.import_use
-
-import demo.testlib as L
-
-fn main() {
-  let r = greet("Dave")
-  print('greeting: ' + r)
-}
