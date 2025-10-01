@@ -29,10 +29,10 @@ public class DfppFeatureTests {
     // Allow enabling entire categories (directories under tests/unit): Data, Expression, Types, Functions
     private static final java.util.List<String> INCLUDE_DIRS = java.util.List.of(
         // e.g. "Data", "Expression", "Functions"
-//            "Data",
-//            "Expression",
-            "Functions"
-//            "Pattern",
+            "Data",
+            "Expression",
+            "Functions",
+            "Pattern"
 //            "Modules",
 //            "Types"
     );

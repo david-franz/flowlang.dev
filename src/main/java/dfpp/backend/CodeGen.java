@@ -42,6 +42,12 @@ public final class CodeGen {
                 fns.add(f);
             }
         }
+        // mark presence of main() for Java entrypoint
+        boolean hasMain = fns.stream().anyMatch(fn -> fn.name().equals("main"));
+        if (hasMain) {
+            clinit.visitInsn(ICONST_1);
+            clinit.visitFieldInsn(PUTSTATIC, classNameInternal, "f$main$exists", "Z");
+        }
         // finish <clinit>
         clinit.visitInsn(RETURN);
         clinit.visitMaxs(0,0); clinit.visitEnd();
@@ -80,7 +86,9 @@ public final class CodeGen {
         String mname = "f$" + mangle(fn.name());
         var mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, mname, "([Ljava/lang/Object;)Ljava/lang/Object;", null, null);
         mv.visitCode();
-        locals.clear(); nextLocal = 0;
+        locals.clear();
+        // Reserve slot 0 for the implicit args array parameter ([Ljava/lang/Object;)
+        nextLocal = 1;
 
         // bind parameters as locals 0..n-1
         for (int i = 0; i < fn.params().size(); i++) {
