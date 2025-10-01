@@ -135,7 +135,7 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("lib_tasks", "NoSuchMethodException"),
         java.util.Map.entry("pre_fail", "InvocationTargetException"),
         java.util.Map.entry("list_oob", "InvocationTargetException"),
-                java.util.Map.entry("idx_not_list", "InvocationTargetException"),
+                java.util.Map.entry("idx_not_list", "TypeException"),
                 java.util.Map.entry("tern_bad_cond", "TypeException"),
                 java.util.Map.entry("arity_mismatch", "RuntimeException"),
                 java.util.Map.entry("call_unknown_fn", "RuntimeException"),

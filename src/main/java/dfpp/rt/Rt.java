@@ -45,9 +45,9 @@ public final class Rt {
             int i = toInt(idx);
             int n = list.size();
             if (i < 0) i = n + i; // negative from end
-            if (i < 0 || i >= n) throw new IndexOutOfBoundsException("list index out of range: " + i);
+            if (i < 0 || i >= n) throw new IndexOutOfBoundsException("list index out of range: " + i + " (size=" + n + ")");
             return list.get(i);
         }
-        throw new IllegalArgumentException("indexing only supported on List in v1: " + base);
+        throw new IllegalArgumentException("indexing only supported on List in v1; got: " + (base==null?"null":base.getClass().getSimpleName()));
     }
 }

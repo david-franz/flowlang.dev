@@ -235,7 +235,7 @@ public final class TypeChecker {
                     fd = functions.get(mf.name());
                 }
                 if (fd == null) error("Unknown function '" + key + "'");
-                if (c.args().size() != fd.params().size()) error("Function '" + mf.name() + "' called with wrong arity");
+                if (c.args().size() != fd.params().size()) error("Function '" + mf.name() + "' called with wrong arity: expected " + fd.params().size() + ", found " + c.args().size());
                 for (int i = 0; i < c.args().size(); i++) {
                     Type at = inferExprType(c.args().get(i), globals, env);
                     Param p = fd.params().get(i);
@@ -252,7 +252,7 @@ public final class TypeChecker {
                 FnDecl fd = functions.get(v3.name());
                 if (fd == null) error("Unknown function '" + v3.name() + "'");
                 if (c.args().size() != fd.params().size()) error("Function '" + v3.name()
-                    + "' called with wrong arity");
+                    + "' called with wrong arity: expected " + fd.params().size() + ", found " + c.args().size());
                 for (int i = 0; i < c.args().size(); i++) {
                     Type at = inferExprType(c.args().get(i), globals, env);
                     Param p = fd.params().get(i);
@@ -312,6 +312,10 @@ public final class TypeChecker {
             if (bt instanceof TList tl) return tl.elem;
             // For Map[K,V], index by key yields V (if key type matches); we only check base shape here
             if (bt instanceof TMap tm) return tm.val;
+            // If we know the base is not indexable, raise a static error
+            if (!(bt instanceof TUnknown)) {
+                error("Indexing not supported on type: " + bt);
+            }
             return new TUnknown();
         }
         if (expr instanceof Bin b) {
