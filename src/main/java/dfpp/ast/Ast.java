@@ -24,7 +24,7 @@ public final class Ast {
     public record SExpr(Expr e) implements Stmt {}
 
     // Expressions (subset)
-    public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren {}
+public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match {}
 
     public record LitInt(int value) implements Expr {}
     public record LitStr(String value) implements Expr {}
@@ -36,4 +36,16 @@ public final class Ast {
     public record Un(String op, Expr expr) implements Expr {}                // "!"
     public record Ternary(Expr cond, Expr thenE, Expr elseE) implements Expr {}
     public record Paren(Expr inner) implements Expr {}
+
+    /** Pattern-matching expression: match <scrut> { arms... } */
+    public record Match(Expr scrut, java.util.List<MatchArm> arms) implements Expr {}
+    /** One arm of a pattern match */
+    public record MatchArm(Pattern pat, Expr expr) {}
+
+    /** Patterns for match expressions */
+    public sealed interface Pattern permits PWildcard, PLitInt, PLitStr, PLitBool {}
+    public record PWildcard() implements Pattern {}
+    public record PLitInt(int value) implements Pattern {}
+    public record PLitStr(String value) implements Pattern {}
+    public record PLitBool(boolean value) implements Pattern {}
 }

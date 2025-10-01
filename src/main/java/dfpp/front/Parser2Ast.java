@@ -169,9 +169,10 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
 
     public Object visitPrimary(DfppParser.PrimaryContext ctx) {
         if (ctx.literal()!=null) return visitLiteral(ctx.literal());
-        if (ctx.ident()!=null)   return new Ast.Var(ident(ctx.ident()));
         if (ctx.expr()!=null)    return new Ast.Paren((Ast.Expr) visitExpr(ctx.expr()));
-        if (ctx.matchExpr()!=null || ctx.recordLit()!=null || ctx.arrayLit()!=null || ctx.runCall()!=null || ctx.lambdaExpr()!=null)
+        if (ctx.matchExpr()!=null) return visitMatchExpr(ctx.matchExpr());
+        if (ctx.ident()!=null)   return new Ast.Var(ident(ctx.ident()));
+        if (ctx.recordLit()!=null || ctx.arrayLit()!=null || ctx.runCall()!=null || ctx.lambdaExpr()!=null)
             throw unsupported(ctx.start, "construct not supported in minimal v1");
         return null;
     }
@@ -183,6 +184,30 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.FALSE()!=null)    return new Ast.LitBool(false);
         if (ctx.NULL()!=null)     return new Ast.LitStr("null"); // we don't model null yet
         throw unsupported(ctx.start, "literal");
+    }
+
+    public Object visitMatchExpr(DfppParser.MatchExprContext ctx) {
+        Ast.Expr scrut = (Ast.Expr) visitExpr(ctx.expr());
+        var arms = new java.util.ArrayList<Ast.MatchArm>();
+        for (var mctx : ctx.matchArm()) {
+            Ast.Pattern pat = (Ast.Pattern) visitPattern(mctx.pattern());
+            Ast.Expr expr = (Ast.Expr) visitExpr(mctx.expr());
+            arms.add(new Ast.MatchArm(pat, expr));
+        }
+        return new Ast.Match(scrut, arms);
+    }
+
+    public Object visitPattern(DfppParser.PatternContext ctx) {
+        if (ctx.UNDERSCORE()!=null) {
+            return new Ast.PWildcard();
+        }
+        if (ctx.literal()!=null) {
+            Object litObj = visitLiteral(ctx.literal());
+            if (litObj instanceof Ast.LitInt li) return new Ast.PLitInt(li.value());
+            if (litObj instanceof Ast.LitStr ls) return new Ast.PLitStr(ls.value());
+            if (litObj instanceof Ast.LitBool lb) return new Ast.PLitBool(lb.value());
+        }
+        throw unsupported(ctx.start, "pattern not supported in minimal v1");
     }
 
     private static String ident(DfppParser.IdentContext id) {

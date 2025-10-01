@@ -1,0 +1,13 @@
+module demo.pat
+
+// Pattern matching on integer literals and wildcard.
+fn main() {
+  print(match (1) {
+    1 -> "one",
+    _ -> "other"
+  })
+  print(match (2) {
+    1 -> "one",
+    _ -> "other"
+  })
+}

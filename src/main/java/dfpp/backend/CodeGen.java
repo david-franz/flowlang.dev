@@ -190,6 +190,49 @@ public final class CodeGen {
                     default   -> throw new RuntimeException("op not supported: "+b.op());
                 }
             }
+            case Ast.Match m -> {
+                // pattern matching on literals and wildcard (minimal v1)
+                Label end = new Label();
+                for (Ast.MatchArm arm : m.arms()) {
+                    Ast.Pattern pat = arm.pat();
+                    if (pat instanceof Ast.PWildcard) {
+                        genExpr(mv, arm.expr(), env, depth+1);
+                        mv.visitJumpInsn(GOTO, end);
+                    } else if (pat instanceof Ast.PLitInt p) {
+                        genExpr(mv, m.scrut(), env, depth+1);
+                        pushIntObj(mv, p.value());
+                        mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "eq", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Boolean;", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toBool", "(Ljava/lang/Object;)Z", false);
+                        Label next = new Label(); mv.visitJumpInsn(IFEQ, next);
+                        genExpr(mv, arm.expr(), env, depth+1);
+                        mv.visitJumpInsn(GOTO, end);
+                        mv.visitLabel(next);
+                    } else if (pat instanceof Ast.PLitStr p) {
+                        genExpr(mv, m.scrut(), env, depth+1);
+                        mv.visitLdcInsn(p.value());
+                        mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "eq", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Boolean;", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toBool", "(Ljava/lang/Object;)Z", false);
+                        Label next = new Label(); mv.visitJumpInsn(IFEQ, next);
+                        genExpr(mv, arm.expr(), env, depth+1);
+                        mv.visitJumpInsn(GOTO, end);
+                        mv.visitLabel(next);
+                    } else if (pat instanceof Ast.PLitBool p) {
+                        genExpr(mv, m.scrut(), env, depth+1);
+                        mv.visitInsn(p.value() ? ICONST_1 : ICONST_0);
+                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "eq", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Boolean;", false);
+                        mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toBool", "(Ljava/lang/Object;)Z", false);
+                        Label next = new Label(); mv.visitJumpInsn(IFEQ, next);
+                        genExpr(mv, arm.expr(), env, depth+1);
+                        mv.visitJumpInsn(GOTO, end);
+                        mv.visitLabel(next);
+                    } else {
+                        throw new RuntimeException("pattern not supported in minimal v1: " + pat.getClass());
+                    }
+                }
+                mv.visitInsn(ACONST_NULL);
+                mv.visitLabel(end);
+            }
             case Ast.Ternary t -> {
                 var elseL = new Label(); var end = new Label();
                 genExpr(mv, t.cond(), env, depth+1);
