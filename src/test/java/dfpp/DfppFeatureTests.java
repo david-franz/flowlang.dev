@@ -29,12 +29,12 @@ public class DfppFeatureTests {
     // Allow enabling entire categories (directories under tests/unit): Data, Expression, Types, Functions
     private static final java.util.List<String> INCLUDE_DIRS = java.util.List.of(
         // e.g. "Data", "Expression", "Functions"
-//            "Data",
-//            "Expression",
-//            "Functions",
-//            "Pattern",
-            "Modules"
-//            "Types"
+            "Data",
+            "Expression",
+            "Functions",
+            "Pattern",
+            "Modules",
+            "Types"
     );
 
     // Inline expected outputs keyed by test basename.
@@ -76,6 +76,7 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("match_str", "ok"),
         java.util.Map.entry("match_bool", "T"),
         // Modules
+        java.util.Map.entry("lib_const", "9"),
         java.util.Map.entry("use_const", "9"),
         // Types
         java.util.Map.entry("add_typed", "5")
