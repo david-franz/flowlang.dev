@@ -31,6 +31,7 @@ public final class CodeGen {
 
         // static fields for top-level let/const
         var fns = new ArrayList<Ast.FnDecl>();
+        var tasks = new ArrayList<Ast.TaskDecl>();
         for (Ast.Top t : prog.tops()) {
             if (t instanceof Ast.ConstDecl c) {
                 field(c.name());
@@ -40,6 +41,8 @@ public final class CodeGen {
                 emitInit(l.name(), l.expr());
             } else if (t instanceof Ast.FnDecl f) {
                 fns.add(f);
+            } else if (t instanceof Ast.TaskDecl td) {
+                tasks.add(td);
             }
         }
         // mark presence of main() for Java entrypoint
@@ -54,6 +57,8 @@ public final class CodeGen {
 
         // functions
         for (Ast.FnDecl f : fns) emitFn(f);
+        // tasks
+        for (Ast.TaskDecl t : tasks) emitTask(t);
 
         // public static void main(String[])
         emitJavaMain();
@@ -346,6 +351,10 @@ public final class CodeGen {
                 }
                 throw new RuntimeException("only simple or module function calls supported in minimal v1");
             }
+            case Ast.RunTask rt -> {
+                String mname = "t$" + mangle(rt.name());
+                mv.visitMethodInsn(INVOKESTATIC, classNameInternal, mname, "()Ljava/lang/Object;", false);
+            }
             default -> throw new RuntimeException("expr not supported: "+e.getClass());
         }
     }
@@ -404,6 +413,50 @@ public final class CodeGen {
         cw.visitField(ACC_PUBLIC|ACC_STATIC, "f$main$exists", "Z", null, null).visitEnd();
         // set in <clinit> if present
         // We can't know here; set true later in emit(Ast.Program) once we see fn main.
+    }
+
+    private void emitTask(Ast.TaskDecl t) {
+        String mname = "t$" + mangle(t.name());
+        var mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, mname, "()Ljava/lang/Object;", null, null);
+        mv.visitCode();
+        locals.clear();
+        nextLocal = 0;
+        // pre
+        if (t.preOpt()!=null) {
+            genExpr(mv, t.preOpt(), Map.of(), 1);
+            mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toBool", "(Ljava/lang/Object;)Z", false);
+            Label ok = new Label();
+            mv.visitJumpInsn(IFNE, ok);
+            mv.visitTypeInsn(NEW, "java/lang/RuntimeException");
+            mv.visitInsn(DUP);
+            mv.visitLdcInsn("pre failed for task '" + t.name() + "'");
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false);
+            mv.visitInsn(ATHROW);
+            mv.visitLabel(ok);
+        }
+        // act
+        for (Ast.Stmt s : t.act().stmts()) genStmt(mv, s);
+        if (t.act().resultOpt()!=null) {
+            // evaluate but ignore
+            genExpr(mv, t.act().resultOpt(), Map.of(), 1);
+            mv.visitInsn(POP);
+        }
+        // post
+        if (t.postOpt()!=null) {
+            genExpr(mv, t.postOpt(), Map.of(), 1);
+            mv.visitMethodInsn(INVOKESTATIC, "dfpp/rt/Rt", "toBool", "(Ljava/lang/Object;)Z", false);
+            Label ok2 = new Label();
+            mv.visitJumpInsn(IFNE, ok2);
+            mv.visitTypeInsn(NEW, "java/lang/RuntimeException");
+            mv.visitInsn(DUP);
+            mv.visitLdcInsn("post failed for task '" + t.name() + "'");
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false);
+            mv.visitInsn(ATHROW);
+            mv.visitLabel(ok2);
+        }
+        mv.visitInsn(ACONST_NULL);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0,0); mv.visitEnd();
     }
 
     // Adjust main flag after functions are known

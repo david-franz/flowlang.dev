@@ -39,8 +39,9 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.constDecl()!=null) return visitConstDecl(ctx.constDecl());
         if (ctx.letDecl()!=null)   return visitLetDecl(ctx.letDecl());
         if (ctx.fnDecl()!=null)    return visitFnDecl(ctx.fnDecl());
+        if (ctx.taskDecl()!=null)  return visitTaskDecl(ctx.taskDecl());
         // ignore other top-level constructs for minimal v1:
-        // typeDecl, taskDecl, runStmt, parallelStmt
+        // typeDecl, runStmt, parallelStmt
         return null;
     }
 
@@ -95,6 +96,11 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
     public Object visitStmt(DfppParser.StmtContext ctx) {
         if (ctx.constDecl()!=null) return new Ast.SConst((Ast.ConstDecl) visitConstDecl(ctx.constDecl()));
         if (ctx.letDecl()!=null)   return new Ast.SLet((Ast.LetDecl) visitLetDecl(ctx.letDecl()));
+        if (ctx.runStmt()!=null) {
+            var rc = ctx.runStmt().runCall();
+            String name = unquote(rc.STRING().getText());
+            return new Ast.SExpr(new Ast.RunTask(name));
+        }
         if (ctx.expr()!=null)      return new Ast.SExpr((Ast.Expr) visitExpr(ctx.expr()));
         throw unsupported(ctx.start, "unsupported stmt");
     }
@@ -233,9 +239,49 @@ public final class Parser2Ast extends DfppBaseVisitor<Object> {
         if (ctx.recordLit()!=null) return visitRecordLit(ctx.recordLit());
         if (ctx.arrayLit()!=null)  return visitArrayLit(ctx.arrayLit());
         if (ctx.ident()!=null)     return new Ast.Var(ident(ctx.ident()));
-        if (ctx.runCall()!=null || ctx.lambdaExpr()!=null)
+        if (ctx.runCall()!=null) {
+            var rc = ctx.runCall();
+            String raw = rc.STRING().getText();
+            String name = unquote(raw);
+            return new Ast.RunTask(name);
+        }
+        if (ctx.lambdaExpr()!=null)
             throw unsupported(ctx.start, "construct not supported in minimal v1");
         return null;
+    }
+
+    public Object visitTaskDecl(DfppParser.TaskDeclContext ctx) {
+        String name = unquote(ctx.STRING().getText());
+        Ast.Expr pre = null;
+        Ast.Expr post = null;
+        // Up to two expr() directly under taskDecl: pre (if any) and post (if any)
+        java.util.List<dfpp.ast.gen.DfppParser.ExprContext> exprs = ctx.getRuleContexts(dfpp.ast.gen.DfppParser.ExprContext.class);
+        Ast.BlockBody act;
+        var blk = ctx.block();
+        var stmts = new ArrayList<Ast.Stmt>();
+        for (var s : blk.stmt()) stmts.add((Ast.Stmt) visitStmt(s));
+        Ast.Expr res = null;
+        if (blk.expr()!=null) {
+            res = (Ast.Expr) visitExpr(blk.expr());
+        } else if (!stmts.isEmpty() && stmts.get(stmts.size()-1) instanceof Ast.SExpr se) {
+            res = se.e();
+            stmts.remove(stmts.size()-1);
+        }
+        act = new Ast.BlockBody(stmts, res);
+        if (!exprs.isEmpty()) {
+            // First expr is PRE (when present) else POS (if PRE absent and POS present)
+            // Disambiguate by position: If there are two exprs, it's PRE then POS; if one, it could be PRE or POS.
+            // We rely on order: grammar emits (PRE expr)? ... (POS expr)?
+            if (exprs.size() == 1) {
+                // We cannot easily know if it's PRE or POS without tokens; default to PRE
+                pre = (Ast.Expr) visitExpr(exprs.get(0));
+            } else if (exprs.size() >= 2) {
+                pre = (Ast.Expr) visitExpr(exprs.get(0));
+                post = (Ast.Expr) visitExpr(exprs.get(1));
+            }
+        }
+        int line = ctx.start.getLine();
+        return new Ast.TaskDecl(name, pre, act, post, line);
     }
 
     public Object visitLiteral(DfppParser.LiteralContext ctx) {

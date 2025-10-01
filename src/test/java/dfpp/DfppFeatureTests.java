@@ -35,7 +35,8 @@ public class DfppFeatureTests {
             "Functions",
             "Pattern",
             "Modules",
-            "Types"
+            "Types",
+            "Tasks"
     );
 
     // Inline expected outputs keyed by test basename.
@@ -99,7 +100,11 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         ,
         // Collections
         java.util.Map.entry("set_param", "ok"),
-        java.util.Map.entry("map_param", "ok")
+        java.util.Map.entry("map_param", "ok"),
+        // Tasks
+        java.util.Map.entry("single_run", "A"),
+        java.util.Map.entry("two_runs", "A\nB"),
+        java.util.Map.entry("pre_pos", "X")
 );
 
     // Tests that are expected to error. The value is the expected exception simple class name
@@ -112,6 +117,9 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("list_nested_mismatch", "TypeException"),
         java.util.Map.entry("set_bad_arity", "TypeException"),
         java.util.Map.entry("map_bad_arity", "TypeException"),
+        // Tasks errors
+        java.util.Map.entry("unknown_task", "TypeException"),
+        java.util.Map.entry("pre_fail", "InvocationTargetException"),
         // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
         java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException")
     );

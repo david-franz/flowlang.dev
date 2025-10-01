@@ -1,0 +1,9 @@
+module unit.tasks
+
+task 'Check' {
+  pre true
+  act { print("X") }
+  pos true
+}
+
+fn main() { run('Check') }

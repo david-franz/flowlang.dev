@@ -63,6 +63,7 @@ public final class TypeChecker {
 
     private final Map<String, Type> globals = new HashMap<>();
     private final Map<String, FnDecl> functions = new HashMap<>();
+    private final Map<String, Ast.TaskDecl> tasks = new HashMap<>();
 
     public static void check(Program prog) {
         new TypeChecker().run(prog);
@@ -93,6 +94,8 @@ public final class TypeChecker {
                 }
             } else if (top instanceof FnDecl f) {
                 functions.put(f.name(), f);
+            } else if (top instanceof Ast.TaskDecl td) {
+                tasks.put(td.name(), td);
             }
         }
         // Functions
@@ -100,6 +103,24 @@ public final class TypeChecker {
             if (top instanceof FnDecl f) {
                 checkFunction(f);
             }
+            if (top instanceof Ast.TaskDecl t) {
+                checkTask(t);
+            }
+        }
+    }
+
+    private void checkTask(Ast.TaskDecl t) {
+        Map<String, Type> env = new HashMap<>(globals);
+        if (t.preOpt()!=null) {
+            Type pt = inferExprType(t.preOpt(), globals, env);
+            if (!(pt instanceof TBool)) error("Task '"+t.name()+"' precondition is not Bool");
+        }
+        // act block should be Unit (ignore value if present)
+        Type at = inferBlock(t.act(), globals, env);
+        // allow any, but warn-like enforced to Unit in minimal checker
+        if (t.postOpt()!=null) {
+            Type q = inferExprType(t.postOpt(), globals, env);
+            if (!(q instanceof TBool)) error("Task '"+t.name()+"' postcondition is not Bool");
         }
     }
 
@@ -244,6 +265,11 @@ public final class TypeChecker {
                 return resolveTypeRef(fd.returnType());
             }
             error("Unsupported call expression");
+        }
+        if (expr instanceof Ast.RunTask rt) {
+            // ensure task exists
+            if (!tasks.containsKey(rt.name())) error("Unknown task '"+rt.name()+"'");
+            return new TUnit();
         }
         if (expr instanceof Ast.Match) {
             // Minimal v1: allow match expressions without precise typing

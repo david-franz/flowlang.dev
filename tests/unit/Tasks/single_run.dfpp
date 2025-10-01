@@ -1,0 +1,7 @@
+module unit.tasks
+
+task 'A' {
+  act { print("A") }
+}
+
+fn main() { run('A') }

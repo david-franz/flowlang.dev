@@ -1,0 +1,2 @@
+module unit.tasks
+fn main() { run('Z') }

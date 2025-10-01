@@ -12,7 +12,7 @@ public final class Ast {
     public record Program(List<Top> tops) {}
 
     // Top-level decls
-    public sealed interface Top permits ConstDecl, LetDecl, FnDecl {}
+    public sealed interface Top permits ConstDecl, LetDecl, FnDecl, TaskDecl {}
 
     /** Top-level constant with optional type annotation. */
     public record ConstDecl(String name, TypeRef type, Expr expr, int line) implements Top {}
@@ -21,6 +21,8 @@ public final class Ast {
 
     /** Function declaration: name, parameters with types, return type, body, and source line. */
     public record FnDecl(String name, List<Param> params, TypeRef returnType, Body body, int line) implements Top {}
+    /** Task declaration with optional pre/post conditions and an act block. */
+    public record TaskDecl(String name, Expr preOpt, BlockBody act, Expr postOpt, int line) implements Top {}
     public sealed interface Body permits ExprBody, BlockBody {}
     public record ExprBody(Expr expr) implements Body {}
     public record BlockBody(List<Stmt> stmts, Expr resultOpt) implements Body {}
@@ -32,7 +34,7 @@ public final class Ast {
     public record SExpr(Expr e) implements Stmt {}
 
     // Expressions (subset)
-public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField, ListLit, Index, ModuleField {}
+public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un, Ternary, Paren, Match, Record, GetField, ListLit, Index, ModuleField, RunTask {}
 
     public record LitInt(int value) implements Expr {}
     public record LitStr(String value) implements Expr {}
@@ -71,4 +73,7 @@ public sealed interface Expr permits LitInt, LitStr, LitBool, Var, Call, Bin, Un
 
     /** Access to a static field on an imported module/class */
     public record ModuleField(String moduleInternal, String name) implements Expr {}
+
+    /** Run a named task: run('name') */
+    public record RunTask(String name) implements Expr {}
 }

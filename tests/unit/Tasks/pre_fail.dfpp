@@ -1,0 +1,5 @@
+module unit.tasks
+
+task 'Nope' { pre false act { print("never") } }
+
+fn main() { run('Nope') }
