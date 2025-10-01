@@ -1,0 +1,5 @@
+module unit.data
+fn main() {
+    let r = { n = 9 }
+    print(r.n + 1)
+}

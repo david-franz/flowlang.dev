@@ -1,0 +1,5 @@
+module unit.types
+fn main() {
+    let xs: List<Int> = [10, 20]
+    print(xs[1])
+}

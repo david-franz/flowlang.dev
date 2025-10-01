@@ -86,7 +86,12 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
         java.util.Map.entry("infer_ret_string", "hi x"),
         java.util.Map.entry("const_decl", "5"),
         java.util.Map.entry("let_infer", "6")
-    );
+            ,
+        // Generics / Collections
+        java.util.Map.entry("rec_field_arith", "10"),
+        java.util.Map.entry("list_annot", "20"),
+        java.util.Map.entry("list_index_to_param", "1")
+);
 
     // Tests that are expected to error. The value is the expected exception simple class name
     // (e.g., TypeException, NoSuchMethodException). If the thrown exception's simple name matches,
@@ -94,6 +99,7 @@ private static final java.util.Map<String, String> EXPECTED = java.util.Map.ofEn
     private static final java.util.Map<String, String> EXPECTED_ERROR = java.util.Map.ofEntries(
         java.util.Map.entry("param_type_required", "TypeException"),
         java.util.Map.entry("ret_mismatch", "TypeException"),
+        java.util.Map.entry("list_mismatch", "TypeException"),
         // Library-only module (no main); attempting to reflect f$main triggers NoSuchMethodException.
         java.util.Map.entry("infer_cross_fn_lib", "NoSuchMethodException")
     );
