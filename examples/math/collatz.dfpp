@@ -1,0 +1,14 @@
+module examples.math.collatz
+
+mut x: Int = 7
+
+task 'step' {
+  act { mut x = (x % 2 == 0) ? (x / 2) : (3 * x + 1) }
+  pos x > 0
+}
+
+task 'report' { act { print(x) } }
+
+fn main() {
+  run('step').then('step').then('report')
+}

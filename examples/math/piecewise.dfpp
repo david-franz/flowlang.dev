@@ -1,0 +1,11 @@
+module examples.math.piecewise
+
+fn signName(n: Int): String {
+  (n == 0) ? "zero" : (n > 0 ? "pos" : "neg")
+}
+
+fn main() {
+  print(signName(0-3))
+  print(signName(0))
+  print(signName(5))
+}

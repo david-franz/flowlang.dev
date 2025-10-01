@@ -1,0 +1,12 @@
+module examples.math.quadratic
+
+fn classify(a: Int, b: Int, c: Int): String {
+  let d = b*b - 4*a*c
+  d == 0 ? "double" : (d > 0 ? "two" : "complex")
+}
+
+fn main() {
+  print(classify(1, 2, 1))
+  print(classify(1, 0, 0-1))
+  print(classify(1, 0, 1))
+}

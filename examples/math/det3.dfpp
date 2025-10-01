@@ -1,0 +1,19 @@
+module examples.math.det3
+
+fn det3(m: List<List<Int>>): Int {
+  let a = m[0][0]
+  let b = m[0][1]
+  let c = m[0][2]
+  let d = m[1][0]
+  let e = m[1][1]
+  let f = m[1][2]
+  let g = m[2][0]
+  let h = m[2][1]
+  let i = m[2][2]
+  a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g)
+}
+
+fn main() {
+  let M = [[1, 2, 3], [0, 1, 4], [5, 6, 0]]
+  print(det3(M))
+}

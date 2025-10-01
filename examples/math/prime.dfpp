@@ -1,0 +1,17 @@
+module examples.math.prime
+
+fn hasDiv(n: Int, d: Int): Bool {
+  (d*d <= n) ? ((n % d == 0) || hasDiv(n, d + 1)) : false
+}
+
+fn isPrime(n: Int): Bool {
+  (n <= 1) ? false : !hasDiv(n, 2)
+}
+
+fn main() {
+  print(isPrime(1))
+  print(isPrime(2))
+  print(isPrime(3))
+  print(isPrime(4))
+  print(isPrime(17))
+}

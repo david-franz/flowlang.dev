@@ -1,0 +1,19 @@
+module examples.math.mat2
+
+fn mul2(a: List<List<Int>>, b: List<List<Int>>): List<List<Int>> {
+  let r00 = a[0][0] * b[0][0] + a[0][1] * b[1][0]
+  let r01 = a[0][0] * b[0][1] + a[0][1] * b[1][1]
+  let r10 = a[1][0] * b[0][0] + a[1][1] * b[1][0]
+  let r11 = a[1][0] * b[0][1] + a[1][1] * b[1][1]
+  [[r00, r01], [r10, r11]]
+}
+
+fn main() {
+  let A = [[1, 2], [3, 4]]
+  let B = [[2, 0], [1, 2]]
+  let R = mul2(A, B)
+  print(R[0][0])
+  print(R[0][1])
+  print(R[1][0])
+  print(R[1][1])
+}

@@ -1,0 +1,14 @@
+module examples.math.gcd_lcm
+
+fn gcd(a: Int, b: Int): Int {
+  (b == 0) ? a : gcd(b, a % b)
+}
+
+fn lcm(a: Int, b: Int): Int {
+  (a / gcd(a, b)) * b
+}
+
+fn main() {
+  print(gcd(48, 18))
+  print(lcm(12, 18))
+}

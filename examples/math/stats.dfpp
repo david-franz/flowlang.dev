@@ -1,0 +1,24 @@
+module examples.math.stats
+
+fn main() {
+  let a = 3
+  let b = 7
+  let c = 2
+  let d = 9
+
+  let sum = a + b + c + d
+  let m1 = (a < b) ? a : b
+  let m2 = (c < d) ? c : d
+  let minv = (m1 < m2) ? m1 : m2
+
+  let M1 = (a > b) ? a : b
+  let M2 = (c > d) ? c : d
+  let maxv = (M1 > M2) ? M1 : M2
+
+  let mean = sum / 4
+
+  print(sum)
+  print(minv)
+  print(maxv)
+  print(mean)
+}

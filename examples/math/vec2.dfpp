@@ -1,0 +1,21 @@
+module examples.math.vec2
+
+fn add(ax: Int, ay: Int, bx: Int, by: Int): List<Int> {
+  [ax + bx, ay + by]
+}
+
+fn dot(ax: Int, ay: Int, bx: Int, by: Int): Int {
+  ax * bx + ay * by
+}
+
+fn norm2(ax: Int, ay: Int): Int {
+  ax * ax + ay * ay
+}
+
+fn main() {
+  let r = add(3, 4, 1, 2)
+  print(r[0])
+  print(r[1])
+  print(dot(3, 4, 1, 2))
+  print(norm2(3, 4))
+}
