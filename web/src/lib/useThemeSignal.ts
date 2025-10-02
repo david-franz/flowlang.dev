@@ -1,0 +1,18 @@
+import { useEffect, useState } from 'react'
+
+export function useThemeSignal() {
+  const getDark = () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  const [tick, setTick] = useState(0)
+  const [dark, setDark] = useState(getDark())
+
+  useEffect(() => {
+    const onTheme = (e: Event) => {
+      setDark(getDark())
+      setTick(t => t + 1)
+    }
+    window.addEventListener('dfpp:theme', onTheme as any)
+    return () => window.removeEventListener('dfpp:theme', onTheme as any)
+  }, [])
+
+  return { dark, tick }
+}

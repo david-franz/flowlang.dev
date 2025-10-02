@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import Editor from '@monaco-editor/react'
+import { useThemeSignal } from '../lib/useThemeSignal'
 import { runDfpp } from '../lib/replClient'
 
 const starter = `module demo.repl
@@ -32,6 +33,7 @@ function registerDfpp(monaco: any) {
 }
 
 export default function REPL() {
+  const { dark } = useThemeSignal()
   const [code, setCode] = useState(starter)
   const [out, setOut] = useState('')
   const [err, setErr] = useState('')
@@ -54,7 +56,7 @@ export default function REPL() {
   return (
     <section className="mx-auto container-page px-4 py-8">
       <h1 className="text-3xl font-semibold">REPL</h1>
-      <p className="mt-2 text-slate-600">Write df++ code on the left and run it. Hook this UI to your compiler via /api/run.</p>
+      <p className="mt-2 text-slate-600 dark:text-slate-300">Write df++ code on the left and run it.</p>
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 code-shadow">
           <Editor
@@ -63,7 +65,7 @@ export default function REPL() {
             value={code}
             onChange={(v)=>setCode(v ?? '')}
             options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
-            theme={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs'}
+            theme={dark ? 'vs-dark' : 'vs'}
             beforeMount={beforeMount}
           />
         </div>
@@ -72,9 +74,9 @@ export default function REPL() {
             <button className={buttonCls} onClick={run} disabled={busy}>
               {busy ? 'Running…' : 'Run'}
             </button>
-            <button className="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 text-slate-800 hover:bg-slate-50" onClick={()=>setCode(starter)}>Reset</button>
+            <button className="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900" onClick={()=>setCode(starter)}>Reset</button>
           </div>
-          <div className="mt-4 text-sm text-slate-500 dark:text-slate-400">Backend hook: POST /api/run returns {`{ stdout, stderr? }`}</div>
+          
           <div className="mt-4">
             <div className="text-sm font-medium text-slate-700 mb-1">Stdout</div>
             <pre className="rounded-md bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 overflow-auto text-sm h-40 text-slate-800 dark:text-slate-200">{out}</pre>

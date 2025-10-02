@@ -13,6 +13,9 @@ export function useDark(): [boolean, () => void] {
     if (dark) el.classList.add('dark')
     else el.classList.remove('dark')
     localStorage.setItem('dfpp:dark', dark ? '1' : '0')
+    try {
+      window.dispatchEvent(new CustomEvent('dfpp:theme', { detail: { dark } }))
+    } catch {}
   }, [dark])
 
   const toggle = () => setDark(d => !d)
