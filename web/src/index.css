@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --page-max: 1120px;
+}
+
+.container-page {
+  max-width: var(--page-max);
+}
+
+.code-shadow {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
