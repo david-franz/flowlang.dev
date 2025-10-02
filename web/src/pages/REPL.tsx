@@ -56,13 +56,14 @@ export default function REPL() {
       <h1 className="text-3xl font-semibold">REPL</h1>
       <p className="mt-2 text-slate-600">Write df++ code on the left and run it. Hook this UI to your compiler via /api/run.</p>
       <div className="mt-6 grid md:grid-cols-2 gap-6">
-        <div className="rounded-lg overflow-hidden border border-slate-200 code-shadow">
+        <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 code-shadow">
           <Editor
             height={380}
             language="dfpp"
             value={code}
             onChange={(v)=>setCode(v ?? '')}
             options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+            theme={typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs'}
             beforeMount={beforeMount}
           />
         </div>
@@ -73,14 +74,14 @@ export default function REPL() {
             </button>
             <button className="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 text-slate-800 hover:bg-slate-50" onClick={()=>setCode(starter)}>Reset</button>
           </div>
-          <div className="mt-4 text-sm text-slate-500">Backend hook: POST /api/run returns {`{ stdout, stderr? }`}</div>
+          <div className="mt-4 text-sm text-slate-500 dark:text-slate-400">Backend hook: POST /api/run returns {`{ stdout, stderr? }`}</div>
           <div className="mt-4">
             <div className="text-sm font-medium text-slate-700 mb-1">Stdout</div>
-            <pre className="rounded-md bg-slate-50 p-3 border border-slate-200 overflow-auto text-sm h-40">{out}</pre>
+            <pre className="rounded-md bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 overflow-auto text-sm h-40 text-slate-800 dark:text-slate-200">{out}</pre>
           </div>
           <div className="mt-4">
             <div className="text-sm font-medium text-slate-700 mb-1">Errors</div>
-            <pre className="rounded-md bg-slate-50 p-3 border border-slate-200 overflow-auto text-sm h-40 text-rose-600">{err}</pre>
+            <pre className="rounded-md bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 overflow-auto text-sm h-40 text-rose-600 dark:text-rose-400">{err}</pre>
           </div>
         </div>
       </div>

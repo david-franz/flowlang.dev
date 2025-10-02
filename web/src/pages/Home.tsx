@@ -14,15 +14,15 @@ export default function Home() {
     <section className="mx-auto container-page px-4">
       <div className="py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
         <div>
-          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900">df++</h1>
-          <p className="mt-4 text-lg text-slate-600 max-w-prose">
+          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">df++</h1>
+          <p className="mt-4 text-lg text-slate-600 dark:text-slate-300 max-w-prose">
             A concise language for the JVM that blends functional collections, lightweight records, and declarative orchestration.
           </p>
           <div className="mt-6 flex gap-3">
             <Link to="/quickstart" className="inline-flex items-center px-4 py-2 rounded-md bg-brand-600 text-white shadow-soft hover:bg-brand-700">
               Quickstart
             </Link>
-            <Link to="/docs" className="inline-flex items-center px-4 py-2 rounded-md border border-slate-300 text-slate-800 hover:bg-slate-50">
+            <Link to="/docs" className="inline-flex items-center px-4 py-2 rounded-md border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900">
               Read the docs
             </Link>
           </div>
@@ -44,9 +44,9 @@ export default function Home() {
 
 function Feature({ title, body }: { title: string, body: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 p-5">
-      <div className="text-slate-900 font-medium">{title}</div>
-      <p className="mt-2 text-slate-600 text-sm leading-6">{body}</p>
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-900/50">
+      <div className="text-slate-900 dark:text-white font-medium">{title}</div>
+      <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm leading-6">{body}</p>
     </div>
   )
 }

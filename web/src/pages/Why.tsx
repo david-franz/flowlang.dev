@@ -1,7 +1,7 @@
 export default function Why() {
   return (
     <section className="mx-auto container-page px-4 py-12">
-      <h1 className="text-3xl font-semibold">Why df++</h1>
+      <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Why df++</h1>
       <div className="mt-4 grid gap-8 md:grid-cols-2">
         <Point
           title="Practical PL design"
@@ -26,9 +26,9 @@ export default function Why() {
 
 function Point({ title, body }: { title: string, body: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 p-6">
-      <div className="text-slate-900 font-medium">{title}</div>
-      <p className="mt-2 text-slate-600 text-sm leading-6">{body}</p>
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-6 bg-white dark:bg-slate-900/50">
+      <div className="text-slate-900 dark:text-white font-medium">{title}</div>
+      <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm leading-6">{body}</p>
     </div>
   )
 }

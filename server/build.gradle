@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'application'
+}
+
+group = 'dfpp'
+version = '0.1.0'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(22) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation project(':')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+application {
+    mainClass = 'dfpp.server.ServerApp'
+}
+
+tasks.named('test') { useJUnitPlatform() }
