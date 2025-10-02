@@ -1,2 +1,3 @@
 rootProject.name = "dfpp"
 include 'server'
+include 'lambda'

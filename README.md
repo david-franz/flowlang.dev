@@ -145,6 +145,25 @@ Repository layout (current)
 - examples: small, runnable snippets
 - tests: unit test corpus and JUnit harness
 
+## Deployment (Azure)
+
+GitHub Actions handle CI/CD for both the React frontend and the Spring Boot backend.
+
+- **Frontend** – `.github/workflows/deploy-frontend.yml`
+  - Builds the Vite app from `web/` with Node 20 and deploys the compiled assets in `web/dist/` to an Azure Static Web App.
+  - Requires repository secrets:
+    - `AZURE_STATIC_WEB_APPS_API_TOKEN` – deployment token from the Static Web App resource.
+  - Optional variables:
+    - `API_BASE` – overrides the backend base URL that is injected into the build (defaults to `https://api.dfpp.run`).
+
+- **Backend** – `.github/workflows/deploy-backend.yml`
+  - Builds `:server:bootJar` and publishes the resulting `server/build/libs/server-*.jar` to an Azure App Service.
+  - Requires repository secrets:
+    - `AZURE_CREDENTIALS` – JSON service-principal credentials accepted by `azure/login` (keys: `clientId`, `clientSecret`, `tenantId`, `subscriptionId`).
+    - `AZURE_WEBAPP_NAME` – target App Service name.
+
+Both workflows trigger on pushes to `main` that touch their respective source trees and can also be run manually via the **Run workflow** button.
+
 License
 
 - This is a reference implementation under active development; a formal license will be added alongside the website/docs.

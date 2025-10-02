@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'dfpp'
+version = '0.1.0'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(22) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation project(':')
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.3'
+    implementation 'com.amazonaws:aws-lambda-java-events:3.11.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+}
+
+tasks.named('shadowJar') {
+    archiveClassifier = 'lambda'
+    mergeServiceFiles()
+}
+
+tasks.register('buildLambda') {
+    dependsOn tasks.named('shadowJar')
+}
