@@ -1,5 +1,8 @@
 package dfpp.server;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -14,10 +17,19 @@ public class ServerApp {
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
+        final String allowedOriginsEnv = System.getenv().getOrDefault(
+                "ALLOWED_ORIGINS",
+                "https://yellow-stone-0059b021e.2.azurestaticapps.net/repl"
+        );
+        final String[] allowedOrigins = Arrays.stream(allowedOriginsEnv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+
         return new WebMvcConfigurer() {
             @Override public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173", "https://dfpp.dev", "https://www.dfpp.dev")
+                        .allowedOriginPatterns(allowedOrigins)
                         .allowedMethods("POST", "GET", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(false);
