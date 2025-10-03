@@ -23,6 +23,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
       - name: Build Spring Boot jar
         run: ./gradlew :server:bootJar
+      - name: Prepare package
+        run: |
+          mkdir -p package
+          cp server/build/libs/server-*.jar package/app.jar
       - name: Azure login
         uses: azure/login@v2
         with:
@@ -31,4 +35,4 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          package: server/build/libs/server-*.jar
+          package: package/app.jar
