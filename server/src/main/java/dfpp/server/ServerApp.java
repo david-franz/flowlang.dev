@@ -18,7 +18,7 @@ public class ServerApp {
     public WebMvcConfigurer corsConfigurer() {
         final String allowedOriginsEnv = System.getenv().getOrDefault(
                 "ALLOWED_ORIGINS",
-                "https://yellow-stone-0059b021e.2.azurestaticapps.net"
+                "https://dfpp.dev,https://www.dfpp.dev"
         );
         final String[] allowedOrigins = Arrays.stream(allowedOriginsEnv.split(","))
                 .map(String::trim)
