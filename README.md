@@ -162,7 +162,7 @@ GitHub Actions handle CI/CD for both the React frontend and the Spring Boot back
     - `AZURE_CREDENTIALS` – JSON service-principal credentials accepted by `azure/login` (keys: `clientId`, `clientSecret`, `tenantId`, `subscriptionId`).
     - `AZURE_WEBAPP_NAME` – target App Service name.
   - Optional configuration via environment variables:
-    - `ALLOWED_ORIGINS` – comma-separated list of origins allowed to call the API (defaults to `http://localhost:5173,https://dfpp.dev,https://www.dfpp.dev,https://*.azurestaticapps.net`).
+    - `ALLOWED_ORIGINS` – comma-separated list of origins allowed to call the API (defaults to `http://localhost:5173,https://flowlang.dev,https://www.flowlang.dev,https://*.azurestaticapps.net`).
   - The workflow uploads an `app.jar`; set the App Service startup command to `java -jar /home/site/wwwroot/app.jar`.
 
 Both workflows trigger on pushes to `main` that touch their respective source trees and can also be run manually via the **Run workflow** button.

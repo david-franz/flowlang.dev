@@ -18,7 +18,7 @@ public class ServerApp {
     public WebMvcConfigurer corsConfigurer() {
         final String allowedOriginsEnv = System.getenv().getOrDefault(
                 "ALLOWED_ORIGINS",
-                "https://dfpp.dev,https://www.dfpp.dev"
+                "https://flowlang.dev,https://www.flowlang.dev"
         );
         final String[] allowedOrigins = Arrays.stream(allowedOriginsEnv.split(","))
                 .map(String::trim)

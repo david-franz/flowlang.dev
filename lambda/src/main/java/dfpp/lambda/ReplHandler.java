@@ -18,16 +18,43 @@ import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class ReplHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String[] ALLOWED_ORIGINS = {
+            "https://flowlang.dev",
+            "https://www.flowlang.dev"
+    };
 
     public static class InReq { public String code; }
     public static class OutRes { public String stdout; public String stderr; }
 
     @Override
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
+        String requestOrigin = extractOrigin(event);
+        String corsOrigin = resolveCorsOrigin(requestOrigin);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
+        headers.put("Access-Control-Allow-Origin", corsOrigin);
+        headers.put("Access-Control-Allow-Headers", "Content-Type");
+        headers.put("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+        String method = event.getRequestContext() != null && event.getRequestContext().getHttp() != null
+                ? event.getRequestContext().getHttp().getMethod()
+                : null;
+
+        if (method != null && method.equalsIgnoreCase("OPTIONS")) {
+            return APIGatewayV2HTTPResponse.builder()
+                    .withStatusCode(200)
+                    .withHeaders(headers)
+                    .withBody("")
+                    .build();
+        }
+
         String body = event.getBody();
         OutRes out = new OutRes();
         try {
@@ -75,13 +102,6 @@ public class ReplHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGat
             out.stderr = ex.getClass().getSimpleName() + ": " + (ex.getMessage()==null? "" : ex.getMessage());
         }
 
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        // CORS: adjust origins as needed
-        headers.put("Access-Control-Allow-Origin", "https://dfpp.dev");
-        headers.put("Access-Control-Allow-Headers", "Content-Type");
-        headers.put("Access-Control-Allow-Methods", "POST, OPTIONS");
-
         try {
             String outJson = MAPPER.writeValueAsString(out);
             return APIGatewayV2HTTPResponse.builder()
@@ -96,5 +116,42 @@ public class ReplHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGat
                     .withBody("{\"stdout\":\"\",\"stderr\":\"serialization error\"}")
                     .build();
         }
+    }
+
+    private static String extractOrigin(APIGatewayV2HTTPEvent event) {
+        Map<String, String> headers = event.getHeaders();
+        if (headers != null) {
+            for (Entry<String, String> entry : headers.entrySet()) {
+                if ("origin".equalsIgnoreCase(entry.getKey())) {
+                    return entry.getValue();
+                }
+            }
+        }
+
+        Map<String, List<String>> multiHeaders = event.getMultiValueHeaders();
+        if (multiHeaders != null) {
+            for (Entry<String, List<String>> entry : multiHeaders.entrySet()) {
+                if ("origin".equalsIgnoreCase(entry.getKey())) {
+                    List<String> values = entry.getValue();
+                    if (values != null && !values.isEmpty()) {
+                        return values.get(0);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String resolveCorsOrigin(String requestOrigin) {
+        String defaultOrigin = ALLOWED_ORIGINS[0];
+        if (requestOrigin == null || requestOrigin.isEmpty()) {
+            return defaultOrigin;
+        }
+        for (String allowed : ALLOWED_ORIGINS) {
+            if (allowed.equalsIgnoreCase(requestOrigin)) {
+                return allowed;
+            }
+        }
+        return defaultOrigin;
     }
 }
