@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { readDarkPreference } from './useDark'
 
 export function useThemeSignal() {
-  const getDark = () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  const getDark = () => readDarkPreference()
   const [tick, setTick] = useState(0)
   const [dark, setDark] = useState(getDark())
 

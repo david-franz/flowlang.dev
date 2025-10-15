@@ -1,18 +1,30 @@
 import { useEffect, useState } from 'react'
 
-export function useDark(): [boolean, () => void] {
-  const [dark, setDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    const saved = localStorage.getItem('dfpp:dark')
+export function readDarkPreference(): boolean {
+  if (typeof document === 'undefined') return false
+
+  if (document.documentElement.classList.contains('dark')) return true
+
+  if (typeof window === 'undefined') return false
+
+  try {
+    const saved = window.localStorage.getItem('dfpp:dark')
     if (saved != null) return saved === '1'
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-  })
+  } catch {}
+
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+}
+
+export function useDark(): [boolean, () => void] {
+  const [dark, setDark] = useState<boolean>(() => readDarkPreference())
 
   useEffect(() => {
     const el = document.documentElement
     if (dark) el.classList.add('dark')
     else el.classList.remove('dark')
-    localStorage.setItem('dfpp:dark', dark ? '1' : '0')
+    try {
+      window.localStorage.setItem('dfpp:dark', dark ? '1' : '0')
+    } catch {}
     try {
       window.dispatchEvent(new CustomEvent('dfpp:theme', { detail: { dark } }))
     } catch {}
