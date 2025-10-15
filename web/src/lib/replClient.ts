@@ -2,7 +2,7 @@ export type ReplResult = { stdout: string; stderr?: string }
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE || '/api'
 
-export async function runDfpp(code: string): Promise<ReplResult> {
+export async function runFlowlang(code: string): Promise<ReplResult> {
   try {
     const resp = await fetch(`${API_BASE}/run`, {
       method: 'POST',

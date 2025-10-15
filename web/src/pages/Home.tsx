@@ -6,7 +6,7 @@ const heroCode = `module demo.hello
 fn main() {
   let xs = [1,2,3,4,5]
   print([x * x for x in xs if x % 2 == 1])
-  print("Hello, df++!")
+  print("Hello, flowlang!")
 }`
 
 export default function Home() {
@@ -14,7 +14,7 @@ export default function Home() {
     <section className="mx-auto container-page px-4">
       <div className="py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
         <div>
-          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">df++</h1>
+          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">flowlang</h1>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-300 max-w-prose">
             A concise language for the JVM that blends functional collections, lightweight records, and declarative orchestration.
           </p>
@@ -26,7 +26,7 @@ export default function Home() {
               Read the docs
             </Link>
           </div>
-          <div className="mt-6 text-sm text-slate-500">Read the design doc in this repo: df++_design_doc.pdf</div>
+          <div className="mt-6 text-sm text-slate-500">Read the design doc in this repo: flowlang_design_doc.pdf</div>
         </div>
         <div>
           <CodeBlock code={heroCode} height={300} />

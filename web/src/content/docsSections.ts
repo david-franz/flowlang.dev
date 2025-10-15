@@ -13,7 +13,7 @@ export const sections: DocSection[] = [
     code: `module demo.hello
 import lib.util as U
 
-fn main() { print("Hello, df++!") }`
+fn main() { print("Hello, flowlang!") }`
   },
   {
     id: 'bindings',

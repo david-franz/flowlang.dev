@@ -11,8 +11,8 @@ export function useThemeSignal() {
       setDark(getDark())
       setTick(t => t + 1)
     }
-    window.addEventListener('dfpp:theme', onTheme as any)
-    return () => window.removeEventListener('dfpp:theme', onTheme as any)
+    window.addEventListener('flowlang:theme', onTheme as any)
+    return () => window.removeEventListener('flowlang:theme', onTheme as any)
   }, [])
 
   return { dark, tick }

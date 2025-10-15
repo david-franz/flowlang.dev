@@ -28,7 +28,7 @@ function Navbar() {
       <div className="relative mx-auto container-page px-4 flex h-14 items-center justify-between">
         <Link to="/" onClick={closeMenu} className="flex items-center gap-2 text-slate-900 dark:text-white font-semibold">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-brand-600"></span>
-          df++
+          flowlang
         </Link>
         <nav className="hidden md:flex items-center gap-1">
           {links.map(link => (
@@ -86,7 +86,7 @@ function Footer() {
   return (
     <footer className="mt-20 border-t border-slate-200 dark:border-slate-800">
       <div className="mx-auto container-page px-4 py-8 text-sm text-slate-500 dark:text-slate-400 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div>© {new Date().getFullYear()} df++</div>
+        <div>© {new Date().getFullYear()} flowlang</div>
         <div className="flex gap-4">
           <a className="hover:text-slate-800 dark:hover:text-white" href="https://" target="_blank" rel="noreferrer">GitHub</a>
           <Link className="hover:text-slate-800 dark:hover:text-white" to="/docs">Docs</Link>

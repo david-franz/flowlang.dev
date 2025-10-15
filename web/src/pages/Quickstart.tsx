@@ -16,7 +16,7 @@ export default function Quickstart() {
           <pre className="mt-2 rounded-md bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 overflow-x-auto text-sm text-slate-800 dark:text-slate-200">./gradlew test</pre>
         </li>
       </ol>
-      <p className="mt-6 text-slate-600 dark:text-slate-300">See the README in the repo for details and the design doc (df++_design_doc.pdf) for the broader model.</p>
+      <p className="mt-6 text-slate-600 dark:text-slate-300">See the README in the repo for details and the design doc (flowlang_design_doc.pdf) for the broader model.</p>
     </section>
   )
 }

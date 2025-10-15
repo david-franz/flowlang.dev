@@ -1,7 +1,7 @@
 export default function Why() {
   return (
     <section className="mx-auto container-page px-4 py-12">
-      <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Why df++</h1>
+      <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Why flowlang</h1>
       <div className="mt-4 grid gap-8 md:grid-cols-2">
         <Point
           title="Practical PL design"
