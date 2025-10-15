@@ -1,4 +1,4 @@
-# df++ (dfpp)
+# flowlang
 
 A small, strongly-typed language for the JVM that blends functional collections, lightweight records, and declarative task orchestration. This repo contains the v1 compiler, bytecode backend, examples, and a test harness.
 
@@ -6,14 +6,14 @@ Status: working v1 proof-of-concept
 
 - Frontend: ANTLR4 grammar → typed AST; local type inference; structural types for records and first-order collections.
 - Backend: JVM bytecode via ASM (JDK 21), one class per compilation unit; verifier-safe codegen.
-- Runtime: tiny helper library (dfpp.rt.Rt) for arithmetic, comparisons, truthiness, list indexing/slicing.
-- Tests: JUnit harness executes df++ files under tests/unit and checks expected stdout or expected errors.
+- Runtime: tiny helper library (flowlang.rt.Rt) for arithmetic, comparisons, truthiness, list indexing/slicing.
+- Tests: JUnit harness executes flowlang files under tests/unit and checks expected stdout or expected errors.
 
 Quick start
 
 ```bash
 ./gradlew clean build
-./gradlew run --args="examples/hello_world.dfpp demo.hello"
+./gradlew run --args="examples/hello_world.flowlang demo.hello"
 ```
 
 Expected output
@@ -21,9 +21,9 @@ Expected output
 ```
 wrote out/demo/hello.class
 
-== running df++ main ==
+== running flowlang main ==
 
-Hello, df++!
+Hello, flowlang!
 ```
 
 Highlights (v1)
@@ -62,7 +62,7 @@ Two-minute tour
 ```text
 module demo.hello
 
-fn main() { print("Hello, df++!") }
+fn main() { print("Hello, flowlang!") }
 ```
 
 - Comprehensions and slicing
@@ -102,16 +102,16 @@ fn main() {
 Build and run your own file
 
 ```bash
-./gradlew run --args="<path/to/file.dfpp> <pkg.or.name>"
+./gradlew run --args="<path/to/file.flowlang> <pkg.or.name>"
 
 # example
-./gradlew run --args="examples/comp.dfpp demo.comp"
+./gradlew run --args="examples/comp.flowlang demo.comp"
 ```
 
 Running tests
 
 - Tests live under tests/unit/<Category> (Collections, Data, Expression, Functions, Modules, Pattern, Tasks, Types).
-- The JUnit harness enumerates enabled categories in src/test/java/dfpp/DfppFeatureTests.java and compares stdout to expected baselines.
+- The JUnit harness enumerates enabled categories in src/test/java/flowlang/FlowlangFeatureTests.java and compares stdout to expected baselines.
 
 ```bash
 ./gradlew test
@@ -135,13 +135,13 @@ Intentional gaps for v1
 
 Design paper
 
-- df++ design doc (PDF): df++_design_doc.pdf
+- flowlang design doc (PDF): flowlang_design_doc.pdf
   The README stays focused on getting started; the paper covers the broader model (capabilities, replay, richer types/orchestration) and roadmap.
 
 Repository layout (current)
 
 - src/main/antlr: grammar
-- src/main/java/dfpp: driver, frontend (parser→AST, type checker), backend (ASM), runtime helpers
+- src/main/java/flowlang: driver, frontend (parser→AST, type checker), backend (ASM), runtime helpers
 - examples: small, runnable snippets
 - tests: unit test corpus and JUnit harness
 
@@ -154,7 +154,7 @@ GitHub Actions handle CI/CD for both the React frontend and the Spring Boot back
   - Requires repository secrets:
     - `AZURE_STATIC_WEB_APPS_API_TOKEN` – deployment token from the Static Web App resource.
   - Optional variables:
-    - `API_BASE` – overrides the backend base URL that is injected into the build (defaults to `https://api.dfpp.run`).
+    - `API_BASE` – overrides the backend base URL that is injected into the build (defaults to `https://api.flowlang.run`).
 
 - **Backend** – `.github/workflows/deploy-backend.yml`
   - Builds `:server:bootJar` and publishes the resulting `server/build/libs/server-*.jar` to an Azure App Service.
